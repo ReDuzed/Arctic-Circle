@@ -375,6 +375,9 @@ namespace ArcticCircle
             e.Player.SendSuccessMessage("The users:" + list + "have had their classes removed.");
         }
 
+
+
+        #region Team Set
         public void KickAll(CommandArgs e)
         {
             string list = " ";
@@ -490,6 +493,7 @@ namespace ArcticCircle
                 }
             }
         }
+ 
         public void MakeDataBase(CommandArgs e)
         {
             if (e.Message.Contains(" "))
@@ -805,4 +809,5 @@ namespace ArcticCircle
             e.Player.SendErrorMessage(string.Concat("Chances are you are already on a team or this team's roster is full."));
         }
     }
+    #endregion
 }

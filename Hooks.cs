@@ -25,6 +25,7 @@ namespace ArcticCircle
         public bool[] hasChosenClass = new bool[256];
         public void ItemClassGameUpdate(EventArgs e)
         {
+            //  Item Classes
             if (preMatchChoose)
             {
                 if ((int)Main.time % 60 == 0)
@@ -75,20 +76,23 @@ namespace ArcticCircle
         }
         public void OnLeave(LeaveEventArgs e)
         {
+            //  Team Set
             if (Delegates.Instance.kickOnLeave)
             {
                 Utils.RemoveFromTeam(TShock.Players[e.Who].Name);
             }
+            //  Item Classes
             hasChosenClass[e.Who] = false;
         }
         public void OnGetData(GetDataEventArgs e)
         {
             if (!e.Handled)
-            {
+            {   
                 if (e.MsgID == PacketTypes.PlayerTeam)
                 {
                     using (BinaryReader br = new BinaryReader(new MemoryStream(e.Msg.readBuffer, e.Index, e.Length)))
                     {
+                        //  Team set
                         byte who = br.ReadByte();
                         byte team = br.ReadByte();
                         int check = Utils.GetPlayerTeam(Main.player[who].name);

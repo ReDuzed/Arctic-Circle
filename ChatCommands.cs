@@ -26,6 +26,7 @@ namespace ArcticCircle
             {
                 add(cmd);
             };
+            #region Item Classes
             add(new Command("classes.user.choose", DEL.ChooseClass, "chooseclass") { HelpText = "" });
             add(new Command("classes.admin.reset", DEL.ResetAll, "resetall") { HelpText = "" });
             add(new Command("classes.admin.reset.opt", DEL.ResetOption, "resetopt") { HelpText = "" });
@@ -41,12 +42,12 @@ namespace ArcticCircle
                 e.Player.SendSuccessMessage("Players able to choose classes: [" + canChoose + "]");
             }, "canchoose") { HelpText = "" });
             add(new Command("classes.admin.start", DEL.Start, "match"));
+            #endregion
 
 
 
 
-
-
+            #region Team Set
             add(new Command("teamset.admin.set", PlaceTeam, new string[] { "placeteam", "removeteam" })
             {
                 HelpText = "For placing or removing players from teams.",
@@ -128,6 +129,7 @@ namespace ArcticCircle
             {
                 HelpText = "Removes all server member's teams"
             });
+            #endregion
         }
     }
 }
