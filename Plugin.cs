@@ -25,6 +25,7 @@ namespace ArcticCircle
             Instance = this;
             Hooks.Instance = new Hooks();
             Delegates.Instance = new Delegates();
+            ChatCommands.Instance.AddCommands();
         }   
         public static Plugin Instance;
         public static Ini classINI;
