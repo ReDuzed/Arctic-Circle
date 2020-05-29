@@ -24,7 +24,7 @@ namespace ArcticCircle
             var DEL = Delegates.Instance;
             Action<Command> add = delegate(Command cmd)
             {
-                add(cmd);
+                Commands.ChatCommands.Add(cmd);
             };
             #region Item Classes
             add(new Command("classes.user.choose", DEL.ChooseClass, "chooseclass") { HelpText = "" });
@@ -48,42 +48,42 @@ namespace ArcticCircle
 
 
             #region Team Set
-            add(new Command("teamset.admin.set", PlaceTeam, new string[] { "placeteam", "removeteam" })
+            add(new Command("teamset.admin.set", DEL.PlaceTeam, new string[] { "placeteam", "removeteam" })
             {
                 HelpText = "For placing or removing players from teams.",
                 AllowServer = false
             });
-            add(new Command("teamset.admin", Reload, new string[] { "reload" })
+            add(new Command("teamset.admin", DEL.Reload, new string[] { "reload" })
             {
                 HelpText = "Reloads settings."
             });
-            add(new Command("teamset.admin.group", MakeGroups, new string[] { "teamgroups" })
+            add(new Command("teamset.admin.group", DEL.MakeGroups, new string[] { "teamgroups" })
             {
                 HelpText = "Makes general groups for each team color."
             });
-            add(new Command("teamset.admin.group", MakeGroups, new string[] { "teamset" })
+            add(new Command("teamset.admin.group", DEL.MakeGroups, new string[] { "teamset" })
             {
                 HelpText = "Modifies the associated group for the specified team color."
             });
-            add(new Command("teamset.join", JoinTeam, new string[] { "jointeam", "team" })
+            add(new Command("teamset.join", DEL.JoinTeam, new string[] { "jointeam", "team" })
             {
                 HelpText = "Allows players to join a team if they aren't on one already.",
                 AllowServer = false
             });
-            add(new Command("teamset.tp", TeamSpawn, new string[] { "tspawn" })
+            add(new Command("teamset.tp", DEL.TeamSpawn, new string[] { "tspawn" })
             {
                 HelpText = "Spawns player to their team-designated spawn point",
                 AllowServer = false
             });
-            add(new Command("teamset.admin.tp", SetSpawn, new string[] { "settspawn" })
+            add(new Command("teamset.admin.tp", DEL.SetSpawn, new string[] { "settspawn" })
             {
                 HelpText = "For admins to set team spawns",
                 AllowServer = false
             });
             add(new Command("teamset.admin", delegate(CommandArgs a)
             {
-                teamSpawn = !teamSpawn;
-                a.Player.SendSuccessMessage("Teams being permitted to use /tspawn is [" + teamSpawn + "].");
+                DEL.teamSpawn = !DEL.teamSpawn;
+                a.Player.SendSuccessMessage("Teams being permitted to use /tspawn is [" + DEL.teamSpawn + "].");
             }, "teamspawn")
             {
                 HelpText = "Toggles whether players can use /tspawn to go to team spawn locations."
@@ -99,33 +99,33 @@ namespace ArcticCircle
             //  Kicking a player via /kick removed them from their team with this flag set.
             add(new Command("teamset.admin", delegate(CommandArgs a)
             {
-                kickOnLeave = !kickOnLeave;
-                a.Player.SendSuccessMessage("Players that leave are removed from their designated team [" + kickOnLeave + "].");
+                DEL.kickOnLeave = !DEL.kickOnLeave;
+                a.Player.SendSuccessMessage("Players that leave are removed from their designated team [" + DEL.kickOnLeave + "].");
             }, "teamleavekick")
             {
                 HelpText = "Toggles whether players leaving should kick them off their teams."
             });
-            add(new Command("teamset.superadmin.db", MakeDataBase, "database")
+            add(new Command("teamset.superadmin.db", DEL.MakeDataBase, "database")
             {
                 HelpText = "Makes the database with which to store maximum player per team only to be used after the INI file is manually set up"
             });
-            add(new Command("teamset.admin.sort", AutoSort, "autosort")
+            add(new Command("teamset.admin.sort", DEL.AutoSort, "autosort")
             {
                 HelpText = "Begins automatically sorting players into the teams that have the least players through use of team indices."
             });
-            add(new Command("teamset.admin", TeleportTeam, "tpteam")
+            add(new Command("teamset.admin", DEL.TeleportTeam, "tpteam")
             {
                 HelpText = "Teleport whole team or single player using /tpteam <all | team <color> | [username]>"
             });
             add(new Command("teamset.admin", delegate(CommandArgs a)
             {
-                autoAssignGroup = !autoAssignGroup;
-                a.Player.SendSuccessMessage("Automatically assigning members upon team join to group set to: [" + autoAssignGroup + "].");
+                DEL.autoAssignGroup = !DEL.autoAssignGroup;
+                a.Player.SendSuccessMessage("Automatically assigning members upon team join to group set to: [" + DEL.autoAssignGroup + "].");
             }, "autoassign")
             {
                 HelpText = "Flag for automatically assigning members to configured groups upon team join"
             });
-            add(new Command("teamset.admin.kick", KickAll, "kickall")
+            add(new Command("teamset.admin.kick", DEL.KickAll, "kickall")
             {
                 HelpText = "Removes all server member's teams"
             });
