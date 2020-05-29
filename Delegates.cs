@@ -1,0 +1,808 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using Terraria;
+using Terraria.ID;
+using Terraria.Localization;
+using TShockAPI;
+using TerrariaApi.Server;
+using RUDD;
+using RUDD.Dotnet;
+
+using ArcticCircle;
+
+namespace ArcticCircle
+{
+    public class Delegates
+    {
+        public Delegates()
+        {
+            Instance = this;
+        }
+        public static Delegates Instance;
+        public bool removeClass, canChoose = true;
+        public bool[] hasChosenClass = new bool[256];
+        public bool freeJoin;
+        public bool kickOnSwitch;
+        public bool kickOnLeave;
+        public bool teamSpawn;
+        public bool overflow;
+        public bool autoAssignGroup;
+        public Vector2[] teamSpawns = new Vector2[6];
+        public static string[] Teams
+        {
+            get { return new string[] { "None", "Red Team", "Green Team", "Blue Team", "Yellow Team", "Pink Team" }; }
+        }
+        public string[] itemSet = new string[4];
+        public int total;
+        public static string[] informal
+        {
+            get { return new string[] { "none", "red", "green", "blue", "yellow", "pink" }; }
+        }
+        public string redTeam = "red", greenTeam = "green", blueTeam = "blue", yellowTeam = "yellow", pinkTeam = "pink";
+        public string[] Groups
+        {
+            get { return new string[] { "none", redTeam, greenTeam, blueTeam, yellowTeam, pinkTeam }; }
+        }
+        public const string Roster = "Roster";
+        public const string Key = "names";
+        public Block spawn;
+        public Block setting;
+        public void ChooseClass(CommandArgs e)
+        {
+            if (!canChoose)
+            {
+                e.Player.SendErrorMessage("Class selection has currently been disabled.");
+                return;
+            }
+            if (!TShockAPI.TShock.ServerSideCharacterConfig.Enabled)
+            {
+                e.Player.SendErrorMessage("SSC is not enabled, therefore class choosing is also not enabled.");
+                return;
+            }
+            string classes = "";
+            for (int i = 0; i < Utils.ClassID.Array.Length; i++)
+            {
+                classes += Utils.ClassID.Array[i] + " ";
+            }
+            if (e.Message.Contains(" "))
+            {
+                string userName = e.TPlayer.name;
+                string param = e.Message.Substring(e.Message.IndexOf(" ") + 1).ToLower().Trim(' ');
+                if (/*Plugin.Instance.teamData.GetBlock(userName).GetValue("class") != "0"*/ hasChosenClass[e.Player.Index])
+                {
+                    e.Player.SendErrorMessage("The character class designation has already occurred.");
+                    return;
+                }
+                if (Utils.ClassSet(param) == -1)
+                {
+                    e.Player.SendErrorMessage("There is no such class. Try '/chooseclass [c/FFFF00:'" + classes.TrimEnd(' ') + "'] instead.");
+                    return;
+                }
+                for (int i = 0; i < NetItem.InventorySlots; i++)
+                {
+                    Utils.UpdateItem(e.TPlayer.inventory[i], i, e.Player.Index, false, 0);
+                }
+                if (itemSet[Utils.ClassSet(param)].Length > 0)
+                {
+                    int index;
+                    if ((index = Utils.ClassSet(param)) >= 0)
+                    {
+                        string[] array = itemSet[index].Trim(' ').Split(',');
+                        for (int j = 0; j < array.Length; j++)
+                        {
+                            int type;
+                            #region Works | good formatting
+                            /*
+                            for (int n = 0; n < array[j].Length; n++)
+                            {
+                                if (array[j].Substring(n, 1) == "s")
+                                {
+                                    int.TryParse(array[j].Substring(n + 1), out type);
+                                    int.TryParse(array[j].Substring(0, n), out stack);
+                                    e.Player.GiveItem(type, stack);
+                                    continue;
+                                }
+                                else if (array[j].Substring(n, 1) == "p")
+                                {
+                                    int.TryParse(array[j].Substring(n + 1), out type);
+                                    int.TryParse(array[j].Substring(0, n), out prefix);
+                                    e.Player.GiveItem(type, 1, prefix);
+                                    continue;
+                                }
+                            }
+                            int.TryParse(array[j], out type);
+                            e.Player.GiveItem(type, 1);*/
+                            #endregion
+                            #region Tried & works | bad formatting
+                            if (int.TryParse(array[j], out type))
+                            {
+                                int stack = j + 1;
+                                if (stack < array.Length)
+                                {
+                                    if (array[stack].StartsWith("s"))
+                                    {
+                                        j++;
+                                        if (int.TryParse(array[stack].Substring(1), out stack))
+                                        {
+                                            e.Player.GiveItem(type, stack);
+                                            continue;
+                                        }
+                                        else
+                                        {
+                                            e.Player.GiveItem(type, 1);
+                                            continue;
+                                        }
+                                    }
+                                }
+                                int prefix = j + 1;
+                                if (prefix < array.Length)
+                                {
+                                    if (array[prefix].StartsWith("p"))
+                                    {
+                                        j++;
+                                        if (int.TryParse(array[prefix].Substring(1), out prefix))
+                                        {
+                                            e.Player.GiveItem(type, 1, prefix);
+                                            continue;
+                                        }
+                                        else
+                                        {   
+                                            e.Player.GiveItem(type, 1);
+                                            continue;
+                                        }
+                                    }
+                                }
+                                e.Player.GiveItem(type, 1);
+                            }
+                            #endregion
+                        }
+                    }
+                }
+                hasChosenClass[e.Player.Index] = true;
+                e.Player.SendSuccessMessage(Utils.ClassID.Array[Utils.ClassSet(param)] + " class chosen!");
+                return;
+            }
+            e.Player.SendErrorMessage("Try '/chooseclass [c/FFFF00:'" + classes.TrimEnd(' ') + "'] instead.");
+        }
+        public void Reload(CommandArgs e)
+        {
+            #region Team Set V2
+            if (!Directory.Exists("config"))
+                Directory.CreateDirectory("config");
+ 
+            Ini ini = new Ini()
+            {
+                setting = new string[] { "playersperteam", "kickonswitch", "teamfreejoin", "kickonleave", "enableteamspawn", "teamoverflow", "autogroupassign", informal[0], informal[1], informal[2], informal[3], informal[4], informal[5] },
+                path = "config\\team_data" + Ini.ext
+            };
+            total = 0;
+            if (!File.Exists(ini.path))
+                ini.WriteFile(new object[] { 4, false, false, false, false, false, false, "0:0", "0:0", "0:0", "0:0", "0:0", "0:0" });
+
+            string t = string.Empty;
+            string kick = string.Empty;
+            string free = string.Empty;
+            string leave = string.Empty;
+            string tspawn = string.Empty;
+            string overf = string.Empty;
+            string auto = string.Empty;
+            string  none = string.Empty,
+                    red = string.Empty, 
+                    green = string.Empty, 
+                    blue = string.Empty, 
+                    yellow = string.Empty, 
+                    pink = string.Empty;
+            var file = ini.ReadFile();
+            if (file.Length > 0)
+            {
+                Ini.TryParse(file[0], out t);
+                Ini.TryParse(file[1], out kick);
+                Ini.TryParse(file[2], out free);
+                Ini.TryParse(file[3], out leave);
+                Ini.TryParse(file[4], out tspawn);
+                Ini.TryParse(file[5], out overf);
+                Ini.TryParse(file[6], out auto);
+                Ini.TryParse(file[7], out none);
+                Ini.TryParse(file[8], out red);
+                Ini.TryParse(file[9], out green);
+                Ini.TryParse(file[10], out blue);
+                Ini.TryParse(file[11], out yellow);
+                Ini.TryParse(file[12], out pink);
+            }
+            bool.TryParse(kick, out kickOnSwitch);
+            int.TryParse(t, out total);
+            bool.TryParse(free, out freeJoin);
+            bool.TryParse(leave, out kickOnLeave);
+            bool.TryParse(tspawn, out teamSpawn);
+            bool.TryParse(overf, out overflow);
+            bool.TryParse(auto, out autoAssignGroup);
+           
+            int noneX, noneY;
+            int redX, redY;
+            int greenX, greenY;
+            int blueX, blueY;
+            int yellowX, yellowY;
+            int pinkX, pinkY;
+            int.TryParse(none.Split(':')[0], out noneX);
+            int.TryParse(none.Split(':')[1], out noneY);
+            int.TryParse(red.Split(':')[0], out redX);
+            int.TryParse(red.Split(':')[1], out redY);
+            int.TryParse(green.Split(':')[0], out greenX);
+            int.TryParse(green.Split(':')[1], out greenY);
+            int.TryParse(blue.Split(':')[0], out blueX);
+            int.TryParse(blue.Split(':')[1], out blueY);
+            int.TryParse(yellow.Split(':')[0], out yellowX);
+            int.TryParse(yellow.Split(':')[1], out yellowY);
+            int.TryParse(pink.Split(':')[0], out pinkX);
+            int.TryParse(pink.Split(':')[1], out pinkY);
+            teamSpawns[0] = new Vector2(noneX, noneY);
+            teamSpawns[1] = new Vector2(redX, redY);
+            teamSpawns[2] = new Vector2(greenX, greenY);
+            teamSpawns[3] = new Vector2(blueX, blueY);
+            teamSpawns[4] = new Vector2(yellowX, yellowY);
+            teamSpawns[5] = new Vector2(pinkX, pinkY);
+
+            string[] Slots = new string[] {};
+            total = Math.Max(total, 2);
+            Slots = new string[total];
+            for (int i = 0; i < total; i++)
+                Slots[i] = "players" + (i + 1);
+            
+            foreach (string team in Teams)
+            {
+                if (!Plugin.Instance.teamData.BlockExists(team))
+                    Plugin.Instance.teamData.NewBlock(Slots, team);
+                else
+                {
+                    Block block;
+                    if ((block = Plugin.Instance.teamData.GetBlock(team)).Contents.Length < total)
+                    {
+                        for (int i = 0; i < total; i++)
+                        {
+                            if (!block.Keys()[i].Contains(i.ToString()))
+                                block.AddItem("players" + i, "0");
+                        }
+                    }
+                }
+            }
+            string[] keys = informal;
+            if (!Plugin.Instance.teamData.BlockExists("groups"))
+            {
+                setting = Plugin.Instance.teamData.NewBlock(keys, "groups");
+                for (int i = 0; i < Groups.Length; i++)
+                {
+                    setting.WriteValue(keys[i], Groups[i]);
+                }
+            }
+            else
+            {
+                setting = Plugin.Instance.teamData.GetBlock("groups");
+                for (int i = 0; i < Groups.Length; i++)
+                {
+                    setting.WriteValue(keys[i], Groups[i]);
+                }
+            }
+            if (!Plugin.Instance.teamData.BlockExists("spawns"))
+            {
+                spawn = Plugin.Instance.teamData.NewBlock(keys, "spawns");
+            }
+            else 
+            {
+                spawn = Plugin.Instance.teamData.GetBlock("spawns");
+            }
+            e.Player.SendSuccessMessage("[TeamSet] settings reloaded.");
+            #endregion
+
+            #region Item Classes
+            if (!File.Exists(Plugin.classINI.path))
+            {
+                Plugin.classINI.WriteFile(null);            
+            }
+            string[] array = Plugin.classINI.ReadFile();
+            
+            //string choose = "";
+            //Plugin.classINI.TryParse(array[0], out choose);
+            //bool.TryParse(choose, out canChoose);
+            
+            if (array.Length == 0)
+                return;
+            itemSet = new string[array.Length];
+            Utils.ClassID.Array = new string[itemSet.Length];
+            for (int i = 0; i < array.Length; i++)
+            {
+                if (array[i].Contains('='))
+                {
+                    Ini.TryParse(array[i], out itemSet[i]);
+                    Utils.ClassID.Array[i] = array[i].Substring(0, array[i].IndexOf('='));
+                }
+            }
+            if (e.TPlayer == TShockAPI.TSPlayer.Server.TPlayer)
+                Console.WriteLine("[PlayerClasses] Successfully reloaded the Plugin.classINI.");
+            else e.Player.SendSuccessMessage("[c/FF0000:PlayerClasses] Successfully reloaded the Plugin.classINI.");
+            #endregion
+        }
+        public void ResetOption(CommandArgs e)
+        {
+            if (e.Message.Contains(" "))
+            {
+                string userName = e.Message.Substring(e.Message.IndexOf(" ") + 1);
+                TSPlayer player = Util.FindPlayer(userName);
+                hasChosenClass[Util.FindPlayer(userName).Index] = false;
+                e.Player.SendSuccessMessage(player.Name + " has had their class removed.");
+            }
+            e.Player.SendErrorMessage("Try '/resetopt <user name>' instead.");
+        }
+        public void Start(CommandArgs e)
+        {
+            Action error = delegate()
+            {
+                e.Player.SendErrorMessage("Try using [c/FFFF00:/match class <# of seconds>] to set a countdown for players to choose a class.");
+            };
+            if (e.Message.Contains(" "))
+            {
+                string sub = e.Message.Substring(e.Message.IndexOf(" ") + 1);
+                if (sub.StartsWith("class") && sub.Contains(" "))
+                {
+                    int.TryParse(sub.Substring(sub.IndexOf(" ") + 1), out Hooks.ticks);
+                    Hooks.ticks = Math.Max(Hooks.ticks, 60);
+                    Hooks.preMatchChoose = true;
+                    TShockAPI.TSPlayer.All.SendInfoMessage("You have [c/FF00FF:" + Hooks.ticks + " seconds] to choose a class before one is auto-assigned to you");
+                }
+                else
+                {
+                    error();
+                }
+            }
+            else
+            {
+                error();
+            }
+        }
+        public void ResetAll(CommandArgs e)
+        {
+            string list = " ";
+            for (int i = 0; i < hasChosenClass.Length; i++)
+            {
+                hasChosenClass[i] = false;
+            }
+            foreach (TSPlayer p in TShock.Players)
+            {
+                if (p != null & p.Active)
+                    list += p.Name + " ";
+            }
+            e.Player.SendSuccessMessage("The users:" + list + "have had their classes removed.");
+        }
+
+        public void KickAll(CommandArgs e)
+        {
+            string list = " ";
+            foreach (TSPlayer p in TShock.Players)
+            {
+                if (p != null && p.Active)
+                {
+                    Utils.SetTeam(p.Index, 0);
+                    list += p.Name + " ";
+                }
+            }
+            e.Player.SendSuccessMessage(string.Concat("Members [c/FFFF00:", list, "] ", "have been removed from their teams."));
+        }
+        public void TeleportTeam(CommandArgs e)
+        {
+            if (e.Message.Contains(" "))
+            {
+                string sub = e.Message.Substring(e.Message.IndexOf(" ") + 1);
+                if (sub.StartsWith("all"))
+                {
+                    foreach (TSPlayer player in TShock.Players)
+                    {
+                        if (player != null && player.Active)
+                        {
+                            var v2 = teamSpawns[Utils.GetPlayerTeam(player.Name)];
+                            player.Teleport(v2.X * 16, v2.Y * 16);
+                            player.SendInfoMessage(e.Player.Name + " has teleported you to your team spawn.");
+                        }
+                    }
+                    e.Player.SendSuccessMessage("All players have been teleported to their team spawns.");
+                }
+                else if (sub.StartsWith("team"))
+                {
+                    string team = sub.Substring(sub.IndexOf(" "));
+                    int index = Utils.GetTeamIndex(team);
+                    foreach (TSPlayer player in TShock.Players)
+                    {
+                        if (player != null && player.Active)
+                        {
+                            var v2 = teamSpawns[index];
+                            player.Teleport(v2.X * 16, v2.Y * 16);
+                            player.SendInfoMessage(e.Player.Name + " has teleported you to your team spawn.");
+                        }
+                    }
+                    e.Player.SendSuccessMessage("Team " + team + " has been teleported to their team spawns.");
+                }
+                else
+                {
+                    string userName = sub;
+                    int index = 0;
+                    foreach (TSPlayer player in TShock.Players)
+                    {
+                        if (player != null && player.Active && player.Name == userName)
+                        {
+                            index = player.Team;
+                            var v2 = teamSpawns[player.Team];
+                            player.Teleport(v2.X * 16, v2.Y * 16);
+                            player.SendInfoMessage(e.Player.Name + " has teleported you to your team spawn.");
+                            break;
+                        }
+                    }
+                    e.Player.SendSuccessMessage(userName + " has been teleported to team " + Teams[index] + "'s spawn.");
+                }
+            }
+        }
+        public void AutoSort(CommandArgs e)
+        {
+            if (e.Message.Contains(" ") && e.Message.Contains(","))
+            {
+                string[] user = Plugin.Instance.teamData.GetBlock(Roster).GetValue(Key).Split(';');
+                
+                int[] num = new int[Teams.Length];
+                for (int k = 0; k < num.Length; k++)
+                    num[k] = -1;
+
+                string[] sub = e.Message.Substring(e.Message.IndexOf(" ") + 1).Split(',');
+                for (int i = 0; i < sub.Length; i++)
+                {
+                    int index = int.Parse(sub[i]);
+                    num[index] = Utils.TeamCount(index);
+                }
+                
+                for (int n = 0; n < user.Length; n++)
+                {
+                    int index = 0;
+                    int min = total;
+                    for (int j = 0; j < num.Length; j++)
+                    {
+                        if (num[j] == -1)
+                            continue;
+                        if (num[j] < min)
+                        {
+                            min = num[j];
+                            index = j;
+                        }
+                    }
+                    TSPlayer player = null;
+                    const int None = 0;
+                    foreach (TSPlayer p in TShock.Players)
+                    {
+                        if (p != null && p.Active && p.Name == user[n] && p.Team == None)
+                        {
+                            player = p;
+                            break;
+                        }
+                    }
+                    if (player != null && index != 0)
+                    {
+                        num[index]++;
+                        JoinTeam(new CommandArgs("jointeam " + informal[index], player, null));
+                        e.Player.SendInfoMessage(player.Name + " sent to " + Teams[index]);
+                    }
+                }
+            }
+        }
+        public void MakeDataBase(CommandArgs e)
+        {
+            if (e.Message.Contains(" "))
+            {
+                string sub = e.Message.Substring(e.Message.IndexOf(" ") + 1);
+                if (sub.StartsWith("reset"))
+                {
+                    Plugin.Instance.teamData.Dispose(false);
+                    e.Player.SendSuccessMessage("The database has been cleared. Please run [c/FF0000:/database init <max # per team>.]");
+                    return;
+                }
+                if (sub.StartsWith("init"))
+                {
+                    string[] Slots = new string[] {};
+                    Action<int> num = delegate(int count)
+                    {
+                        total = Math.Max(count, 2);
+                        Slots = new string[total];
+                        for (int i = 0; i < total; i++)
+                            Slots[i] = "players" + (i + 1);
+                        e.Player.SendSuccessMessage("Max spots per team has been set to: [c/FFFF00: " + total + "].");
+                    };
+                    int t;
+                    if (!sub.Contains(" "))
+                    {
+                        num(total);
+                    }
+                    else if (int.TryParse(sub.Substring(sub.IndexOf(" ") + 1), out t))
+                    {
+                        num(t);
+                    }
+                    else
+                    {
+                        e.Player.SendErrorMessage("Specify total max players per team: [c/FFFF00:/database init <#>], or leave the # out which defaults to config data.");
+                        return;
+                    }
+                    foreach (string team in Teams)
+                    {
+                        if (!Plugin.Instance.teamData.BlockExists(team))
+                            Plugin.Instance.teamData.NewBlock(Slots, team);
+                        else
+                        {
+                            Block block;
+                            if ((block = Plugin.Instance.teamData.GetBlock(team)).Contents.Length < total)
+                            {
+                                for (int i = 0; i < total; i++)
+                                {
+                                    if (!block.Keys()[i].Contains(i.ToString()))
+                                        block.AddItem("players" + i, "0");
+                                }
+                            }
+                        }
+                    }
+                    string[] keys = informal;
+                    if (!Plugin.Instance.teamData.BlockExists("groups"))
+                    {
+                        setting = Plugin.Instance.teamData.NewBlock(keys, "groups");
+                        for (int i = 0; i < Groups.Length; i++)
+                        {
+                            setting.WriteValue(keys[i], Groups[i]);
+                        }
+                    }
+                    else
+                    {
+                        setting = Plugin.Instance.teamData.GetBlock("groups");
+                        for (int i = 0; i < Groups.Length; i++)
+                        {
+                            setting.WriteValue(keys[i], Groups[i]);
+                        }
+                    }
+                    if (!Plugin.Instance.teamData.BlockExists("spawns"))
+                    {
+                        spawn = Plugin.Instance.teamData.NewBlock(keys, "spawns");
+                    }
+                    else 
+                    {
+                        spawn = Plugin.Instance.teamData.GetBlock("spawns");
+                    }
+                    e.Player.SendSuccessMessage("Database initializing complete.");
+                }
+            }
+        }
+        public void TeamSpawn(CommandArgs e)
+        {
+            if (teamSpawn)
+            {
+                Utils.TeamTeleport(e.Player.Name, e.Player.Index);
+            }
+            else e.Player.SendInfoMessage("Team spawn points are disabled.");
+        }
+        
+        public void SetSpawn(CommandArgs e)
+        {
+            Vector2 v2 = new Vector2((float)Math.Round(e.TPlayer.position.X, 0), (float)Math.Round(e.TPlayer.position.Y, 0));
+            if (e.Message.Contains(" "))
+            {
+                string team = e.Message.Substring(e.Message.IndexOf(" ") + 1).ToLower();
+                for (int i = 0; i < informal.Length; i++)
+                {
+                    if (informal[i] == team)
+                    {
+                        spawn.WriteValue(team, string.Concat(v2.X, "x", v2.Y));
+                        break;
+                    }
+                    if (i == informal.Length - 1)
+                    {
+                        e.Player.SendErrorMessage(string.Concat(team, " is not an existing team. Only the name of the color of the team is required."));
+                        return;
+                    }
+                }
+                e.Player.SendSuccessMessage(string.Format("{0} team spawn set at {1}X {2}Y.", team, v2.X, v2.Y));
+            }
+            else
+            {
+                e.Player.SendErrorMessage("The command format is /settspawn <team color>.");
+            }
+        }
+        public void MakeGroups(CommandArgs e)
+        {
+            if (e.Message.ToLower().Contains("teamset"))
+            {
+                string cmd = e.Message.Substring(7);
+                if (cmd.Contains("red"))
+                {
+                    redTeam = cmd.Substring(cmd.LastIndexOf(" ") + 1);
+                    e.Player.SendSuccessMessage("Red's group: " + redTeam);
+                }
+                else if (cmd.Contains("green"))
+                {
+                    greenTeam = cmd.Substring(cmd.LastIndexOf(" ") + 1);
+                    e.Player.SendSuccessMessage("Green's group: " + greenTeam);
+                }
+                else if (cmd.Contains("blue"))
+                {
+                    blueTeam = cmd.Substring(cmd.LastIndexOf(" ") + 1);
+                    e.Player.SendSuccessMessage("Blue's group: " + blueTeam);
+                }
+                else if (cmd.Contains("yellow"))
+                {
+                    yellowTeam = cmd.Substring(cmd.LastIndexOf(" ") + 1);
+                    e.Player.SendSuccessMessage("Yellow's group: " + yellowTeam);
+                }
+                else if (cmd.Contains("pink"))
+                {
+                    pinkTeam = cmd.Substring(cmd.LastIndexOf(" ") + 1);
+                    e.Player.SendSuccessMessage("Pink's group: " + pinkTeam);
+                }
+                else
+                {
+                    e.Player.SendInfoMessage("/teamset [team color] [group name]");
+                }
+                for (int i = 1; i < Groups.Length; i++)
+                    setting.WriteValue(informal[i], Groups[i]);
+                return;
+            }
+            var manage = TShock.Groups;
+            if (manage.GroupExists("default"))
+            {
+                manage.GetGroupByName("default").SetPermission(new System.Collections.Generic.List<string>() { "teamset.join" });
+                manage.GetGroupByName("default").ChatColor = "200,200,200";
+                manage.GetGroupByName("default").Prefix = "[i:1] ";
+            }
+            if (!manage.GroupExists("team"))
+            {
+                manage.AddGroup("team", "default", "", "255,255,255");
+                Console.WriteLine("The group 'team' has been made.");
+            }
+            for (int i = 1; i < Teams.Length; i++)
+            {
+                if (!TShock.Groups.GroupExists(Groups[i]))
+                {
+                    TShock.Groups.AddGroup(Groups[i], "team", "", "255,255,255");
+                    switch (i)
+                    {
+                        case 1:
+                            manage.GetGroupByName(Groups[i]).Prefix = "[i:1526] ";
+                            manage.GetGroupByName(Groups[i]).ChatColor = "200,000,000";
+                            break;
+                        case 2:
+                            manage.GetGroupByName(Groups[i]).Prefix = "[i:1525] ";
+                            manage.GetGroupByName(Groups[i]).ChatColor = "000,200,050";
+                            break;
+                        case 3:
+                            manage.GetGroupByName(Groups[i]).Prefix = "[i:1524] ";
+                            manage.GetGroupByName(Groups[i]).ChatColor = "100,100,200";
+                            break;
+                        case 4:
+                            manage.GetGroupByName(Groups[i]).Prefix = "[i:1523] ";
+                            manage.GetGroupByName(Groups[i]).ChatColor = "200,150,000";
+                            break;
+                        case 5:
+                            manage.GetGroupByName(Groups[i]).Prefix = "[i:1522] ";
+                            manage.GetGroupByName(Groups[i]).ChatColor = "200,000,150";
+                            break;
+                    }
+                    Console.WriteLine("The group '", Groups[i], "' has been made.");
+                }
+            }
+            string msg;
+            Console.WriteLine(msg = "The permissions, group colors, and chat prefixes have not been completely set up and will need to be done manually, though each team group has been parented to group 'team'.");
+            e.Player.SendSuccessMessage(msg);
+        }
+        public void PlaceTeam(CommandArgs e)
+        {
+            string cmd = string.Empty;
+            if (e.Message.ToLower().Contains("placeteam"))
+            {
+                if ((cmd = e.Message.ToLower()).Length > 9 && e.Message.Contains(" "))
+                {
+                    for (int i = 0; i < Main.player.Length; i++)
+                    {
+                        var player = Main.player[i];
+                        if (player.active)
+                        {
+                            string name = player.name.ToLower();
+                            if (cmd.ToLower().Contains(name))
+                            {
+                                string preserveCase = cmd.Substring(cmd.IndexOf(" ") + 1, name.Length);
+                                string sub = cmd.Substring(cmd.IndexOf(" ") + 1, name.Length).ToLower();
+                                if (sub == name)
+                                {
+                                    string team = cmd.Substring(cmd.LastIndexOf(" ") + 1).ToLower();
+                                    int t = Utils.GetTeamIndex(team);
+                                    if (t > 0 || int.TryParse(team, out t))
+                                    {
+                                        int get = 0;
+                                        if ((get = Utils.GetPlayerTeam(name)) == 0)
+                                        {
+                                            if (Utils.SetPlayerTeam(name, t))
+                                            {
+                                                e.Player.SendSuccessMessage(string.Concat(preserveCase, " is now on team ", Teams[t], "."));
+                                                string set = Groups[t].ToLower();
+                                                if (TShock.Groups.GroupExists(set) && autoAssignGroup)
+                                                {
+                                                    e.Player.Group = TShock.Groups.GetGroupByName(set);
+                                                    Console.WriteLine(string.Concat(e.Player.Name, " has been set to group ", set, "!"));
+                                                }
+                                            }
+                                            else
+                                            {
+                                                e.Player.SendErrorMessage(string.Concat(Teams[t], " might be already full."));
+                                            }
+                                        }
+                                        else 
+                                        {
+                                            e.Player.SendErrorMessage(string.Concat(preserveCase, " is already on ", Teams[get], ". Using /removeteam [name] will remove the player from their team."));
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            else if (e.Message.Contains("removeteam"))
+            {
+                if ((cmd = e.Message).Length > 10 && e.Message.Contains(" "))
+                {
+                    string name = string.Empty;
+                    if (Utils.RemoveFromTeam(name = cmd.Substring(cmd.IndexOf(" ") + 1)))
+                    {
+                        e.Player.SendSuccessMessage(string.Concat(name, " has been removed from their team."));
+                        string set = "default";
+                        if (TShock.Groups.GroupExists(set) && autoAssignGroup)
+                        {
+                            e.Player.Group = TShock.Groups.GetGroupByName(set);
+                            Console.WriteLine(string.Concat(e.Player.Name, " has been set to group ", set, "!"));
+                        }
+                    }
+                    else
+                    {
+                        e.Player.SendErrorMessage(string.Concat(name, " might not be on a team, or their is no player by this name."));
+                    }
+                }
+                else
+                {
+                    e.Player.SendErrorMessage(string.Concat("Try /removeteam [name]."));
+                }
+            }
+        }
+        public void JoinTeam(CommandArgs e)
+        {
+            string cmd = string.Empty;
+            int index = 0;
+            bool success = false;
+            for (int i = 0; i < Teams.Length; i++)
+            {
+                string t = Teams[i];
+                cmd = e.Message.Substring(e.Message.IndexOf(" ") + 1);
+                int.TryParse(cmd, out index);
+                if (Utils.GetPlayerTeam(e.Player.Name) == 0 || freeJoin)
+                {
+                    if (t.ToLower().Contains(cmd.ToLower()))
+                        success = Utils.SetPlayerTeam(e.Player.Name, Utils.GetTeamIndex(cmd));
+                    else if (index != 0 && index == Utils.GetTeamIndex(t))
+                    {
+                        success = Utils.SetPlayerTeam(e.Player.Name, index);
+                    }
+                    if (success)
+                    {
+                        if (!e.Message.StartsWith("team"))
+                            e.Player.SendSuccessMessage(string.Concat("Joining ", t, " has succeeded."));
+                        string set = Groups[i];
+                        if (TShock.Groups.GroupExists(set) && autoAssignGroup)
+                        {
+                            e.Player.Group = TShock.Groups.GetGroupByName(set);
+                            Console.WriteLine(string.Concat(e.Player.Name, " has been set to group ", set, "!"));
+                        }
+                        return;
+                    }
+                }
+            }
+            e.Player.SendErrorMessage(string.Concat("Chances are you are already on a team or this team's roster is full."));
+        }
+    }
+}
