@@ -8,6 +8,7 @@ using Terraria.Localization;
 using TShockAPI;
 using TerrariaApi.Server;
 using RUDD.Dotnet;
+using static TShockAPI.GetDataHandlers;
 
 using ArcticCircle;
 
@@ -101,6 +102,19 @@ namespace ArcticCircle
                         {
                             TShock.Players[who].Disconnect("Kicked for switching teams.");
                         }
+                    }
+                }
+                else if (e.MsgID == PacketTypes.GemLockToggle)
+                {
+                    e.Handled = true;
+
+                    using (BinaryReader br = new BinaryReader(new MemoryStream(e.Msg.readBuffer, e.Index, e.Length)))
+                    {
+                        int posX = br.ReadInt16();
+                        int posY = br.ReadInt16();
+                        bool on = br.ReadBoolean();
+
+                        WorldGen.ToggleGemLock(posX, posY, on);
                     }
                 }
             }
