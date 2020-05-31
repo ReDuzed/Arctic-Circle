@@ -51,7 +51,9 @@ namespace ArcticCircle
         public Block setting;
         public void ChooseClass(CommandArgs e)
         {
-            if (!canChoose)
+            bool canBypass = e.Player.HasPermission("classes.admin.bypass");
+
+            if (!canChoose && !canBypass)
             {
                 e.Player.SendErrorMessage("Class selection has currently been disabled.");
                 return;
@@ -70,7 +72,7 @@ namespace ArcticCircle
             {
                 string userName = e.TPlayer.name;
                 string param = e.Message.Substring(e.Message.IndexOf(" ") + 1).ToLower().Trim(' ');
-                if (/*Plugin.Instance.teamData.GetBlock(userName).GetValue("class") != "0"*/ hasChosenClass[e.Player.Index])
+                if (/*Plugin.Instance.teamData.GetBlock(userName).GetValue("class") != "0"*/ hasChosenClass[e.Player.Index] && !canBypass)
                 {
                     e.Player.SendErrorMessage("The character class designation has already occurred.");
                     return;
