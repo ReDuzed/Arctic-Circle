@@ -63,11 +63,14 @@ namespace ArcticCircle
                 e.Player.SendErrorMessage("SSC is not enabled, therefore class choosing is also not enabled.");
                 return;
             }
+
             string classes = "";
             for (int i = 0; i < Utils.ClassID.Array.Length; i++)
             {
-                classes += Utils.ClassID.Array[i] + " ";
+                classes += Utils.ClassID.Array[i] + ", ";
             }
+            classes = classes.TrimEnd(new char[] { ',', ' ' });
+
             if (e.Message.Contains(" "))
             {
                 string userName = e.TPlayer.name;
