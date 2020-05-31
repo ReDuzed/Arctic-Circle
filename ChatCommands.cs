@@ -29,8 +29,6 @@ namespace ArcticCircle
             #region Item Classes
             add(new Command("classes.user.choose", DEL.ChooseClass, "chooseclass") { HelpText = "" });
             add(new Command("classes.admin.add", DEL.AddClass, "addclass") { HelpText = "" });
-            add(new Command("classes.admin.reset", DEL.ResetAll, "resetall") { HelpText = "" });
-            add(new Command("classes.admin.reset.opt", DEL.ResetOption, "resetopt") { HelpText = "" });
             add(new Command("classes.admin.reload", DEL.Reload, "reload") { HelpText = "" });
             add(new Command("classes.admin.reset.logout", delegate(CommandArgs e)
             {

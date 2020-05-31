@@ -75,6 +75,7 @@ namespace ArcticCircle
             roster.AddValue(Delegates.Key, ';', userName);
             #endregion
         }
+
         public void OnLeave(LeaveEventArgs e)
         {
             //  Team Set
@@ -85,6 +86,7 @@ namespace ArcticCircle
             //  Item Classes
             hasChosenClass[e.Who] = false;
         }
+
         public void OnGetData(GetDataEventArgs e)
         {
             if (!e.Handled)
@@ -118,6 +120,12 @@ namespace ArcticCircle
                     }
                 }
             }
+        }
+
+        public void OnItemDrop(object sender, ItemDropEventArgs args)
+        {
+            // TODO: Check what the item is. Possibly a whitelist for blocks and such?
+            args.Handled = true;
         }
     }
 }
