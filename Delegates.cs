@@ -85,10 +85,9 @@ namespace ArcticCircle
                     e.Player.SendErrorMessage("There is no such class. Try '/chooseclass [c/FFFF00:'" + classes.TrimEnd(' ') + "'] instead.");
                     return;
                 }
-                for (int i = 0; i < NetItem.InventorySlots; i++)
-                {
-                    Utils.UpdateItem(e.TPlayer.inventory[i], i, e.Player.Index, false, 0);
-                }
+
+                Utils.ResetPlayer(e.Player);
+
                 if (itemSet[Utils.ClassSet(param)].Length > 0)
                 {
                     int index;
