@@ -245,9 +245,7 @@ namespace ArcticCircle
             }
             classItemsConfig = classItemsConfig.TrimEnd(new char[] { ',' });
 
-            string classConfig = string.Format("{0}={1}", className, classItemsConfig);
-            Console.WriteLine(classConfig);
-            // TODO: Write to the config.
+            Plugin.classINI.AddSetting(className, classItemsConfig);
         }
 
         public void Reload(CommandArgs e)
