@@ -22,6 +22,13 @@ namespace ArcticCircle
             public static string[] Array = new string[4];
         }
 
+        public class ClassItem
+        {
+            public int id;
+            public int stack;
+            public int prefix;
+        }
+
         public static string Class(int index)
         {
             return ClassID.Array[index].ToLower();

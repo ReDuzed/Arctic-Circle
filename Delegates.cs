@@ -11,6 +11,7 @@ using RUDD;
 using RUDD.Dotnet;
 
 using ArcticCircle;
+using static ArcticCircle.Utils;
 
 namespace ArcticCircle
 {
@@ -49,6 +50,7 @@ namespace ArcticCircle
         public const string Key = "names";
         public Block spawn;
         public Block setting;
+
         public void ChooseClass(CommandArgs e)
         {
             bool canBypass = e.Player.HasPermission("classes.admin.bypass");
@@ -170,6 +172,84 @@ namespace ArcticCircle
             }
             e.Player.SendErrorMessage("Try '/chooseclass [c/FFFF00:'" + classes.TrimEnd(' ') + "'] instead.");
         }
+
+        public void AddClass(CommandArgs e)
+        {
+            TSPlayer tsPlayer = e.Player;
+            Player player = tsPlayer.TPlayer;
+            if (e.Parameters.Count == 0)
+            {
+                tsPlayer.SendErrorMessage("Invalid syntax! Proper syntax: /addclass <class name>");
+                return;
+            }
+
+            string className = e.Parameters[0];
+
+            // Iterate through the player's inventory and make a list of all the items to add to the class.
+            List<ClassItem> classItems = new List<ClassItem>();
+            for (int i = 0; i < NetItem.InventorySlots + NetItem.ArmorSlots + NetItem.DyeSlots + NetItem.MiscEquipSlots + NetItem.MiscDyeSlots; i++)
+            {
+                Item item = null;
+                if (i < NetItem.InventorySlots) // Main inventory slots.
+                {
+                    item = player.inventory[i];
+                }
+                else if (i < NetItem.InventorySlots + NetItem.ArmorSlots) // Armor and Accessory slots
+                {
+                    int index = i - NetItem.InventorySlots;
+                    item = player.armor[index];
+                }
+                else if (i < NetItem.InventorySlots + NetItem.ArmorSlots + NetItem.DyeSlots) // Dye Slots
+                {
+                    var index = i - (NetItem.InventorySlots + NetItem.ArmorSlots);
+                    item = player.dye[index];
+                }
+                else if (i < NetItem.InventorySlots + NetItem.ArmorSlots + NetItem.DyeSlots + NetItem.MiscEquipSlots) // Misc equip slots
+                {
+                    var index = i - (NetItem.InventorySlots + NetItem.ArmorSlots + NetItem.DyeSlots);
+                    item = player.miscEquips[index];
+                }
+                else if (i < NetItem.InventorySlots + NetItem.ArmorSlots + NetItem.DyeSlots + NetItem.MiscEquipSlots + NetItem.MiscDyeSlots) // Misc dye slots
+                {
+                    var index = i - (NetItem.InventorySlots + NetItem.ArmorSlots + NetItem.DyeSlots + NetItem.MiscEquipSlots);
+                    item = player.miscDyes[index];
+                }
+
+                if (item.netID == 0)
+                {
+                    continue;
+                }
+
+                ClassItem classItem = new ClassItem()
+                {
+                    id = item.netID,
+                    stack = item.stack,
+                    prefix = item.prefix
+                };
+                classItems.Add(classItem);
+            }
+
+            // Write to the class config file.
+            string classItemsConfig = "";
+            foreach (ClassItem classItem in classItems)
+            {
+                classItemsConfig += classItem.id + ",";
+                if (classItem.stack > 1)
+                {
+                    classItemsConfig += string.Format("s{0},", classItem.stack);
+                }
+                else if (classItem.prefix > 0)
+                {
+                    classItemsConfig += string.Format("p{0},", classItem.prefix);
+                }
+            }
+            classItemsConfig = classItemsConfig.TrimEnd(new char[] { ',' });
+
+            string classConfig = string.Format("{0}={1}", className, classItemsConfig);
+            Console.WriteLine(classConfig);
+            // TODO: Write to the config.
+        }
+
         public void Reload(CommandArgs e)
         {
             #region Team Set V2
