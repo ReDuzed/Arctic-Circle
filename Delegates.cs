@@ -246,6 +246,8 @@ namespace ArcticCircle
             classItemsConfig = classItemsConfig.TrimEnd(new char[] { ',' });
 
             Plugin.classINI.AddSetting(className, classItemsConfig);
+
+            tsPlayer.SendSuccessMessage("The " + className + " class was successfully added! Please use /reload or restart the server to be able to use the class.");
         }
 
         public void Reload(CommandArgs e)
