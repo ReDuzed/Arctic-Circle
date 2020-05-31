@@ -8,9 +8,6 @@ using Terraria.Localization;
 using TShockAPI;
 using TerrariaApi.Server;
 using RUDD.Dotnet;
-// Type or namespace not found exception:
-//using ItemClasses;
-//using TeamSetQueue;
 
 namespace ArcticCircle
 {
@@ -44,6 +41,8 @@ namespace ArcticCircle
             ServerApi.Hooks.ServerLeave.Register(this, Hooks.Instance.OnLeave);
             ServerApi.Hooks.GameUpdate.Register(this, Hooks.Instance.ItemClassGameUpdate);
             ServerApi.Hooks.NetGetData.Register(this, Hooks.Instance.OnGetData);
+
+            Utils.SetDefaultStats();
         }
         protected override void Dispose(bool disposing)
         {

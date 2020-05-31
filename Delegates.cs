@@ -11,6 +11,7 @@ using RUDD;
 using RUDD.Dotnet;
 
 using ArcticCircle;
+using static ArcticCircle.Utils;
 
 namespace ArcticCircle
 {
@@ -49,9 +50,12 @@ namespace ArcticCircle
         public const string Key = "names";
         public Block spawn;
         public Block setting;
+
         public void ChooseClass(CommandArgs e)
         {
-            if (!canChoose)
+            bool canBypass = e.Player.HasPermission("classes.admin.bypass");
+
+            if (!canChoose && !canBypass)
             {
                 e.Player.SendErrorMessage("Class selection has currently been disabled.");
                 return;
@@ -61,16 +65,19 @@ namespace ArcticCircle
                 e.Player.SendErrorMessage("SSC is not enabled, therefore class choosing is also not enabled.");
                 return;
             }
+
             string classes = "";
             for (int i = 0; i < Utils.ClassID.Array.Length; i++)
             {
-                classes += Utils.ClassID.Array[i] + " ";
+                classes += Utils.ClassID.Array[i] + ", ";
             }
+            classes = classes.TrimEnd(new char[] { ',', ' ' });
+
             if (e.Message.Contains(" "))
             {
                 string userName = e.TPlayer.name;
                 string param = e.Message.Substring(e.Message.IndexOf(" ") + 1).ToLower().Trim(' ');
-                if (/*Plugin.Instance.teamData.GetBlock(userName).GetValue("class") != "0"*/ hasChosenClass[e.Player.Index])
+                if (/*Plugin.Instance.teamData.GetBlock(userName).GetValue("class") != "0"*/ hasChosenClass[e.Player.Index] && !canBypass)
                 {
                     e.Player.SendErrorMessage("The character class designation has already occurred.");
                     return;
@@ -80,10 +87,9 @@ namespace ArcticCircle
                     e.Player.SendErrorMessage("There is no such class. Try '/chooseclass [c/FFFF00:'" + classes.TrimEnd(' ') + "'] instead.");
                     return;
                 }
-                for (int i = 0; i < NetItem.InventorySlots; i++)
-                {
-                    Utils.UpdateItem(e.TPlayer.inventory[i], i, e.Player.Index, false, 0);
-                }
+
+                Utils.ResetPlayer(e.Player);
+
                 if (itemSet[Utils.ClassSet(param)].Length > 0)
                 {
                     int index;
@@ -166,6 +172,84 @@ namespace ArcticCircle
             }
             e.Player.SendErrorMessage("Try '/chooseclass [c/FFFF00:'" + classes.TrimEnd(' ') + "'] instead.");
         }
+
+        public void AddClass(CommandArgs e)
+        {
+            TSPlayer tsPlayer = e.Player;
+            Player player = tsPlayer.TPlayer;
+            if (e.Parameters.Count == 0)
+            {
+                tsPlayer.SendErrorMessage("Invalid syntax! Proper syntax: /addclass <class name>");
+                return;
+            }
+
+            string className = e.Parameters[0];
+
+            // Iterate through the player's inventory and make a list of all the items to add to the class.
+            List<ClassItem> classItems = new List<ClassItem>();
+            for (int i = 0; i < NetItem.InventorySlots + NetItem.ArmorSlots + NetItem.DyeSlots + NetItem.MiscEquipSlots + NetItem.MiscDyeSlots; i++)
+            {
+                Item item = null;
+                if (i < NetItem.InventorySlots) // Main inventory slots.
+                {
+                    item = player.inventory[i];
+                }
+                else if (i < NetItem.InventorySlots + NetItem.ArmorSlots) // Armor and Accessory slots
+                {
+                    int index = i - NetItem.InventorySlots;
+                    item = player.armor[index];
+                }
+                else if (i < NetItem.InventorySlots + NetItem.ArmorSlots + NetItem.DyeSlots) // Dye Slots
+                {
+                    var index = i - (NetItem.InventorySlots + NetItem.ArmorSlots);
+                    item = player.dye[index];
+                }
+                else if (i < NetItem.InventorySlots + NetItem.ArmorSlots + NetItem.DyeSlots + NetItem.MiscEquipSlots) // Misc equip slots
+                {
+                    var index = i - (NetItem.InventorySlots + NetItem.ArmorSlots + NetItem.DyeSlots);
+                    item = player.miscEquips[index];
+                }
+                else if (i < NetItem.InventorySlots + NetItem.ArmorSlots + NetItem.DyeSlots + NetItem.MiscEquipSlots + NetItem.MiscDyeSlots) // Misc dye slots
+                {
+                    var index = i - (NetItem.InventorySlots + NetItem.ArmorSlots + NetItem.DyeSlots + NetItem.MiscEquipSlots);
+                    item = player.miscDyes[index];
+                }
+
+                if (item.netID == 0)
+                {
+                    continue;
+                }
+
+                ClassItem classItem = new ClassItem()
+                {
+                    id = item.netID,
+                    stack = item.stack,
+                    prefix = item.prefix
+                };
+                classItems.Add(classItem);
+            }
+
+            // Write to the class config file.
+            string classItemsConfig = "";
+            foreach (ClassItem classItem in classItems)
+            {
+                classItemsConfig += classItem.id + ",";
+                if (classItem.stack > 1)
+                {
+                    classItemsConfig += string.Format("s{0},", classItem.stack);
+                }
+                else if (classItem.prefix > 0)
+                {
+                    classItemsConfig += string.Format("p{0},", classItem.prefix);
+                }
+            }
+            classItemsConfig = classItemsConfig.TrimEnd(new char[] { ',' });
+
+            Plugin.classINI.AddSetting(className, classItemsConfig);
+
+            tsPlayer.SendSuccessMessage("The " + className + " class was successfully added! Please use /reload or restart the server to be able to use the class.");
+        }
+
         public void Reload(CommandArgs e)
         {
             #region Team Set V2
