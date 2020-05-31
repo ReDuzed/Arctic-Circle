@@ -8,9 +8,6 @@ using Terraria.Localization;
 using TShockAPI;
 using TerrariaApi.Server;
 using RUDD.Dotnet;
-// Type or namespace not found exception:
-//using ItemClasses;
-//using TeamSetQueue;
 
 namespace ArcticCircle
 {
