@@ -164,6 +164,7 @@ namespace ArcticCircle
             #region Item Tweak
             add(new Command("item.admin.add", DEL.ItemTweak, new string[] { "tweak" }));
             add(new Command("item.admin.get", DEL.ItemGet, new string[] { "giveitem" }));
+            add(new Command("item.admin.add", DEL.ItemRestore, new string[] { "resetitem" }));
             #endregion
         }
     }
