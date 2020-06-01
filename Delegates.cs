@@ -455,14 +455,21 @@ namespace ArcticCircle
 
         public void ResetOption(CommandArgs e)
         {
-            if (e.Message.Contains(" "))
+            if (e.Parameters.Count < 1)
             {
-                string userName = e.Message.Substring(e.Message.IndexOf(" ") + 1);
-                TSPlayer player = Util.FindPlayer(userName);
-                hasChosenClass[Util.FindPlayer(userName).Index] = false;
-                e.Player.SendSuccessMessage(player.Name + " has had their class removed.");
+                e.Player.SendErrorMessage("Try '/resetopt <user name>' instead.");
+                return;
             }
-            e.Player.SendErrorMessage("Try '/resetopt <user name>' instead.");
+
+            string userName = e.Message.Substring(e.Message.IndexOf(" ") + 1);
+            TSPlayer player = Util.FindPlayer(userName);
+            if (player == null)
+            {
+                e.Player.SendErrorMessage("The player was not found!");
+                return;
+            }
+            hasChosenClass[Util.FindPlayer(userName).Index] = false;
+            e.Player.SendSuccessMessage(player.Name + " has had their class removed.");
         }
 
         #region Team Set
