@@ -16,6 +16,9 @@ namespace ArcticCircle
         public static List<NetItem> StarterItems = new List<NetItem>();
         public static int startHealth, startMana;
 
+        public static string[] Parameters = new string[] { "width", "height", "damage", "crit", "knockback", "prefix", "reusedelay", "shoot", "shootspeed", "useammo", "usetime", "autoreuse", "ammo", "scale" };
+        public const int Width = 0, Height = 1, Damage = 2, Crit = 3, KB = 4, Prefix = 5, ReuseDelay = 6, Shoot = 7, ShootSpeed = 8, UseAmmo = 9, UseTime = 10, AutoReuse = 11, Ammo = 12, Scale = 13;
+
         public static class ClassID
         {
             public const string None = "None", Ranged = "Ranged", Melee = "Melee", Mage = "Mage";
@@ -64,6 +67,7 @@ namespace ArcticCircle
             NetMessage.SendData((int)PacketTypes.PlayerSlot, who, -1, NetworkText.FromLiteral(item.Name), who, slot, item.prefix);
         }
 
+        #region Reset Players
         public static void SetDefaultStats()
         {
             if (Main.ServerSideCharacter)
@@ -265,6 +269,7 @@ namespace ArcticCircle
                 NetMessage.SendData((int)PacketTypes.PlayerSlot, player.Index, -1, NetworkText.Empty, player.Index, (float)k, 0f, 0f, 0);
             }
         }
+        #endregion
 
         #region Team Set
         public const string Empty = "0";
@@ -384,8 +389,6 @@ namespace ArcticCircle
             return count;
         }
         #endregion
-
-
 
         #region Item Tweak
         public static int GetParamIndex(string key)

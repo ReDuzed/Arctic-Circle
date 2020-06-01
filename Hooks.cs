@@ -11,6 +11,7 @@ using RUDD.Dotnet;
 using static TShockAPI.GetDataHandlers;
 
 using ArcticCircle;
+using static ArcticCircle.Utils;
 
 namespace ArcticCircle
 {
@@ -91,41 +92,67 @@ namespace ArcticCircle
         {
             if (!e.Handled)
             {
-                if (e.MsgID == PacketTypes.PlayerTeam)
+                using (BinaryReader br = new BinaryReader(new MemoryStream(e.Msg.readBuffer, e.Index, e.Length)))
                 {
-                    using (BinaryReader br = new BinaryReader(new MemoryStream(e.Msg.readBuffer, e.Index, e.Length)))
+                    switch (e.MsgID)
                     {
-                        //  Team set
-                        byte who = br.ReadByte();
-                        byte team = br.ReadByte();
-                        int check = Utils.GetPlayerTeam(Main.player[who].name);
-                        Utils.SetTeam(who, check);
-                        if (Delegates.Instance.kickOnSwitch && team != check && team != 0)
-                        {
-                            TShock.Players[who].Disconnect("Kicked for switching teams.");
-                        }
-                    }
-                }
-                else if (e.MsgID == PacketTypes.GemLockToggle)
-                {
-                    e.Handled = true;
-
-                    using (BinaryReader br = new BinaryReader(new MemoryStream(e.Msg.readBuffer, e.Index, e.Length)))
-                    {
-                        int posX = br.ReadInt16();
-                        int posY = br.ReadInt16();
-                        bool on = br.ReadBoolean();
-
-                        WorldGen.ToggleGemLock(posX, posY, on);
+                        case PacketTypes.PlayerTeam:
+                            //  Team set
+                            byte who = br.ReadByte();
+                            byte team = br.ReadByte();
+                            int check = Utils.GetPlayerTeam(Main.player[who].name);
+                            Utils.SetTeam(who, check);
+                            if (Delegates.Instance.kickOnSwitch && team != check && team != 0)
+                            {
+                                TShock.Players[who].Disconnect("Kicked for switching teams.");
+                            }
+                            break;
+                        case PacketTypes.GemLockToggle:
+                            e.Handled = true;
+                            int posX = br.ReadInt16();
+                            int posY = br.ReadInt16();
+                            bool on = br.ReadBoolean();
+                            WorldGen.ToggleGemLock(posX, posY, on);
+                            break;
                     }
                 }
             }
         }
 
-        public void OnItemDrop(object sender, ItemDropEventArgs args)
+        public void OnItemDrop(object sender, ItemDropEventArgs e)
         {
-            // TODO: Check what the item is. Possibly a whitelist for blocks and such?
-            args.Handled = true;
+            TSPlayer tsPlayer = e.Player;
+            Player player = tsPlayer.TPlayer;
+
+            Item item = TShock.Utils.GetItemById(e.Type);
+
+            var data = Plugin.Instance.item_data;
+            if (data.BlockExists(item.Name))
+            {
+                e.Handled = true;
+
+                Block block = data.GetBlock(item.Name);
+
+                int index = Item.NewItem(player.position, new Microsoft.Xna.Framework.Vector2(32, 48), item.type, e.Stacks);
+                Item newItem = Main.item[index];
+
+                int.TryParse(block.GetValue(Parameters[Damage].TrimEnd(':', '0')), out newItem.damage);
+                int.TryParse(block.GetValue(Parameters[Crit].TrimEnd(':', '0')), out newItem.crit);
+                float.TryParse(block.GetValue(Parameters[KB].TrimEnd(':', '0')), out newItem.knockBack);
+                byte.TryParse(block.GetValue(Parameters[Prefix].TrimEnd(':', '0')), out newItem.prefix);
+                int.TryParse(block.GetValue(Parameters[ReuseDelay].TrimEnd(':', '0')), out newItem.reuseDelay);
+                int.TryParse(block.GetValue(Parameters[Shoot].TrimEnd(':', '0')), out newItem.shoot);
+                float.TryParse(block.GetValue(Parameters[ShootSpeed].TrimEnd(':', '0')), out newItem.shootSpeed);
+                int.TryParse(block.GetValue(Parameters[UseAmmo].TrimEnd(':', '0')), out newItem.useAmmo);
+                int.TryParse(block.GetValue(Parameters[UseTime].TrimEnd(':', '0')), out newItem.useTime);
+                int.TryParse(block.GetValue(Parameters[Width].TrimEnd(':', '0')), out newItem.width);
+                int.TryParse(block.GetValue(Parameters[Height].TrimEnd(':', '0')), out newItem.height);
+                bool.TryParse(block.GetValue(Parameters[AutoReuse].TrimEnd(':', '0')), out newItem.autoReuse);
+                int.TryParse(block.GetValue(Parameters[Ammo].TrimEnd(':', '0')), out newItem.ammo);
+                float.TryParse(block.GetValue(Parameters[Scale].TrimEnd(':', '0')), out newItem.scale);
+
+                TSPlayer.All.SendData(PacketTypes.TweakItem, "", index, 255, 63);
+            }
         }
     }
 }
