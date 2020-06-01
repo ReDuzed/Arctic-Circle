@@ -7,6 +7,7 @@ using Terraria.ID;
 using Terraria.Localization;
 using TShockAPI;
 using TerrariaApi.Server;
+using Terraria.Server;
 using RUDD;
 using RUDD.Dotnet;
 
@@ -453,12 +454,12 @@ namespace ArcticCircle
             }
             foreach (TSPlayer p in TShock.Players)
             {
-                if (p != null & p.Active)
+                if (p != null && p.Active)
                     list += p.Name + " ";
             }
             e.Player.SendSuccessMessage("The users:" + list + "have had their classes removed.");
         }
-
+        
 
 
         #region Team Set
@@ -892,6 +893,144 @@ namespace ArcticCircle
             }
             e.Player.SendErrorMessage(string.Concat("Chances are you are already on a team or this team's roster is full."));
         }
+        #endregion
+
+        #region Item Tweak
+        public static string[] Parameters = new string[] { "width", "height", "damage", "crit", "knockback", "prefix", "reusedelay", "shoot", "shootspeed", "useammo", "usetime", "autoreuse", "ammo", "scale" };
+        public const int Width = 0, Height = 1, Damage = 2, Crit = 3, KB = 4, Prefix = 5, ReuseDelay = 6, Shoot = 7, ShootSpeed = 8, UseAmmo = 9, UseTime = 10, AutoReuse = 11, Ammo = 12, Scale = 13;
+        public void ItemTweak(CommandArgs e)
+        {
+            var param = e.Parameters;
+            string List = " ";
+                for (int i = 0; i < Parameters.Length; i++)
+                    List += Parameters[i] + ", ";
+            if (param.Count < 3)
+            {
+                e.Player.SendErrorMessage("There was a parametere error. Try: [c/FFFF00:/tweak <item name | ID> <parameter> <#>]\n" +
+                        "Available parameters:[c/FFFF00:" + List.Replace(":", "").Replace("0", "").TrimEnd(',', ' ') +  "].");
+                return;
+            }
+
+            var list = TShock.Utils.GetItemByIdOrName(param[0]);
+            if (list.Count == 0)
+            {
+                e.Player.SendErrorMessage("Item " + param[0] + " not found.");
+                return;
+            }
+            if (!List.Contains(param[1].ToLower()))
+            {
+                e.Player.SendErrorMessage(param[1] + " was an invalid parameter.\n" +
+                        "Available parameters:[c/FFFF00:" + List.Replace(":", "").Replace("0", "").TrimEnd(',', ' ') +  "].");
+                return;
+            }
+
+            var data = Plugin.Instance.item_data;
+            Item item = list[0];
+        
+            Block block;
+            if (!data.BlockExists(item.Name))
+            {
+                block = data.NewBlock(Parameters, item.Name);
+/*
+                block.WriteValue(Parameters[Width], item.width.ToString());
+                block.WriteValue(Parameters[Height], item.height.ToString());
+                block.WriteValue(Parameters[Damage], item.damage.ToString());
+                block.WriteValue(Parameters[Crit], item.crit.ToString());
+                block.WriteValue(Parameters[KB], item.knockBack.ToString());
+                block.WriteValue(Parameters[Prefix], item.prefix.ToString());
+                block.WriteValue(Parameters[ReuseDelay], item.reuseDelay.ToString());
+                block.WriteValue(Parameters[Shoot], item.shoot.ToString());
+                block.WriteValue(Parameters[ShootSpeed], item.shootSpeed.ToString());
+                block.WriteValue(Parameters[UseAmmo], item.useAmmo.ToString());
+                block.WriteValue(Parameters[UseTime], item.useTime.ToString());
+                block.WriteValue(Parameters[AutoReuse], item.autoReuse.ToString());
+                block.WriteValue(Parameters[Ammo], item.ammo.ToString());
+                block.WriteValue(Parameters[Scale], item.scale.ToString());*/
+                  
+                e.Player.SendSuccessMessage(item.Name + " has been stored. Use [c/FFFF00:/tweak] again to change its attributes.");
+                return;
+            }
+            else
+            {
+                block = data.GetBlock(item.Name);
+                block.WriteValue(param[1], param[2]);
+            }
+            e.Player.SendSuccessMessage(string.Format("{0}'s {1} attribute changed to {2}.", item.Name, param[1], param[2]));
+        }
+        public void ItemGet(CommandArgs e)
+        {
+            var param = e.Parameters;
+
+            string List = " ";
+                for (int i = 0; i < Parameters.Length; i++)
+                    List += Parameters[i] + ", ";
+
+            if (param.Count < 2)
+            {
+                e.Player.SendErrorMessage("Not enough information. Use [c/FFFF00:/giveitem <iten name | ID> <stack #> <attributes 1> <attribute 2>...]\n" +
+                        "Available parameters:[c/FFFF00:" + List.Replace(":", "").Replace("0", "").TrimEnd(',', ' ') +  "].");
+                return;
+            }
+
+            int stack = 0;
+            if (!int.TryParse(param[1], out stack))
+                stack = 1;
+            var itemList = TShock.Utils.GetItemByIdOrName(param[0]);
+
+            if (itemList.Count == 0)
+            {
+                e.Player.SendErrorMessage("Item " + param[0] + " not found.");
+                return;
+            }
+            Item getItem = itemList[0];
+
+            var data = Plugin.Instance.item_data;
+            Block block;
+            if (!data.BlockExists(getItem.Name))
+            {
+                e.Player.SendErrorMessage("Item " + param[0] + " has no reference stored. [c/FFFF00:First add it using /tweak].");
+                return;
+            }
+            else
+            {
+                block = data.GetBlock(getItem.Name);
+
+                //byte.TryParse(block.GetValue(Parameters[Prefix]), out byte prefix);
+                int index = Item.NewItem(e.TPlayer.position, new Microsoft.Xna.Framework.Vector2(32, 48), getItem.type, stack);
+
+                Item item = Main.item[index];
+                if (param.Contains(Parameters[Damage]))
+                    item.damage = int.Parse(block.GetValue(Parameters[Damage]));
+                if (param.Contains(Parameters[Crit]))
+                    item.crit = int.Parse(block.GetValue(Parameters[Crit]));
+                if (param.Contains(Parameters[KB])) 
+                    item.knockBack = float.Parse(block.GetValue(Parameters[KB]));
+                if (param.Contains(Parameters[Prefix]))
+                    item.prefix = byte.Parse(block.GetValue(Parameters[Prefix]));
+                if (param.Contains(Parameters[ReuseDelay]))
+                    item.reuseDelay = int.Parse(block.GetValue(Parameters[ReuseDelay]));
+                if (param.Contains(Parameters[Shoot]))
+                    item.shoot = int.Parse(block.GetValue(Parameters[Shoot]));
+                if (param.Contains(Parameters[ShootSpeed]))
+                    item.shootSpeed = float.Parse(block.GetValue(Parameters[ShootSpeed]));
+                if (param.Contains(Parameters[UseAmmo]))
+                    item.useAmmo = int.Parse(block.GetValue(Parameters[UseAmmo]));
+                if (param.Contains(Parameters[UseTime]))
+                    item.useTime = int.Parse(block.GetValue(Parameters[UseTime]));
+                if (param.Contains(Parameters[Width]))
+                    item.width = int.Parse(block.GetValue(Parameters[Width]));
+                if (param.Contains(Parameters[Height]))
+                    item.height = int.Parse(block.GetValue(Parameters[Height]));
+                if (param.Contains(Parameters[AutoReuse]))
+                    item.autoReuse = bool.Parse(block.GetValue(Parameters[AutoReuse]));
+                if (param.Contains(Parameters[Ammo]))
+                    item.ammo = int.Parse(block.GetValue(Parameters[Ammo]));
+                if (param.Contains(Parameters[Scale]))
+                    item.scale = float.Parse(block.GetValue(Parameters[Scale]));
+
+                TSPlayer.All.SendData(PacketTypes.TweakItem, "", index, 255, 63);
+            }
+        }
+        #endregion
     }
-    #endregion
 }

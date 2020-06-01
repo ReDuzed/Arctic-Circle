@@ -24,14 +24,16 @@ namespace ArcticCircle
             Hooks.Instance = new Hooks();
             Delegates.Instance = new Delegates();
             ChatCommands.Instance = new ChatCommands();
-            ChatCommands.Instance.AddCommands();
         }   
         public static Plugin Instance;
         public static Ini classINI;
         public DataStore teamData;
+        public DataStore item_data;
         public override void Initialize()
         {
+            ChatCommands.Instance.AddCommands();
             teamData = new DataStore("config\\team_data");
+            item_data = new DataStore("config\\item_data");
             classINI = new Ini()
             {
                 path = "config\\class_data" + Ini.ext
@@ -48,6 +50,8 @@ namespace ArcticCircle
         {
             if (disposing)
             {   
+                teamData.WriteToFile();
+                item_data.WriteToFile();
                 ServerApi.Hooks.ServerJoin.Deregister(this, Hooks.Instance.OnJoin);
                 ServerApi.Hooks.ServerLeave.Deregister(this, Hooks.Instance.OnLeave);
                 ServerApi.Hooks.GameUpdate.Deregister(this, Hooks.Instance.ItemClassGameUpdate);
