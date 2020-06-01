@@ -43,7 +43,7 @@ namespace ArcticCircle
                     preMatchChoose = false;
                 }
             }
-        }   
+        }
         public void OnJoin(JoinEventArgs e)
         {
             hasChosenClass[e.Who] = false;
@@ -90,7 +90,7 @@ namespace ArcticCircle
         public void OnGetData(GetDataEventArgs e)
         {
             if (!e.Handled)
-            {   
+            {
                 if (e.MsgID == PacketTypes.PlayerTeam)
                 {
                     using (BinaryReader br = new BinaryReader(new MemoryStream(e.Msg.readBuffer, e.Index, e.Length)))
@@ -99,7 +99,7 @@ namespace ArcticCircle
                         byte who = br.ReadByte();
                         byte team = br.ReadByte();
                         int check = Utils.GetPlayerTeam(Main.player[who].name);
-                         Utils.SetTeam(who, check);
+                        Utils.SetTeam(who, check);
                         if (Delegates.Instance.kickOnSwitch && team != check && team != 0)
                         {
                             TShock.Players[who].Disconnect("Kicked for switching teams.");

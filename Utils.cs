@@ -384,5 +384,33 @@ namespace ArcticCircle
             return count;
         }
         #endregion
+
+
+
+        #region Item Tweak
+        public static int GetParamIndex(string key)
+        {
+            var Parameters = Delegates.Parameters;
+            int choose = 0;
+            int index = -1;
+            for (int i = 0; i < Parameters.Length; i++)
+            {
+                int same = 0;
+                for (int k = 0; k < Parameters[i].Length - 1; k++)
+                {
+                    if (k < key.Length - 1)
+                    {
+                        if (Parameters[i].ToLower().Substring(k, 1) == key.ToLower().Substring(k, 1))
+                        {
+                            if (same++ > choose)
+                                index = i;
+                        }
+                    }
+                }
+                choose = same;
+            }
+            return index;
+        }
+        #endregion
     }   
 }
