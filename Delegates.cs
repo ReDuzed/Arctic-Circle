@@ -898,6 +898,50 @@ namespace ArcticCircle
         #region Item Tweak
         public static string[] Parameters = new string[] { "width", "height", "damage", "crit", "knockback", "prefix", "reusedelay", "shoot", "shootspeed", "useammo", "usetime", "autoreuse", "ammo", "scale" };
         public const int Width = 0, Height = 1, Damage = 2, Crit = 3, KB = 4, Prefix = 5, ReuseDelay = 6, Shoot = 7, ShootSpeed = 8, UseAmmo = 9, UseTime = 10, AutoReuse = 11, Ammo = 12, Scale = 13;
+        public void ItemRestore(CommandArgs e)
+        {
+            var param = e.Parameters;
+            if (param.Count == 0)
+            {
+                e.Player.SendErrorMessage("There was a parameter error. Try: [c/FFFF00:/resetitem <item name | ID>] to restore default values.");
+                return;
+            }
+            var list = TShock.Utils.GetItemByIdOrName(param[0]);
+            var data = Plugin.Instance.item_data;
+            if (list.Count == 0)
+            {
+                e.Player.SendErrorMessage("Item " + param[0] + " not found.");
+                return;
+            }
+            Item item = list[0];
+
+            if (data.BlockExists(item.Name))
+            {
+                Block block = data.GetBlock(item.Name);
+
+                block.WriteValue(Parameters[Width].TrimEnd(':', '0'), item.width.ToString());
+                block.WriteValue(Parameters[Height].TrimEnd(':', '0'), item.height.ToString());
+                block.WriteValue(Parameters[Damage].TrimEnd(':', '0'), item.damage.ToString());
+                block.WriteValue(Parameters[Crit].TrimEnd(':', '0'), item.crit.ToString());
+                block.WriteValue(Parameters[KB].TrimEnd(':', '0'), item.knockBack.ToString());
+                block.WriteValue(Parameters[Prefix].TrimEnd(':', '0'), item.prefix.ToString());
+                block.WriteValue(Parameters[ReuseDelay].TrimEnd(':', '0'), item.reuseDelay.ToString());
+                block.WriteValue(Parameters[Shoot].TrimEnd(':', '0'), item.shoot.ToString());
+                block.WriteValue(Parameters[ShootSpeed].TrimEnd(':', '0'), item.shootSpeed.ToString());
+                block.WriteValue(Parameters[UseAmmo].TrimEnd(':', '0'), item.useAmmo.ToString());
+                block.WriteValue(Parameters[UseTime].TrimEnd(':', '0'), item.useTime.ToString());
+                block.WriteValue(Parameters[AutoReuse].TrimEnd(':', '0'), item.autoReuse.ToString());
+                block.WriteValue(Parameters[Ammo].TrimEnd(':', '0'), item.ammo.ToString());
+                block.WriteValue(Parameters[Scale].TrimEnd(':', '0'), item.scale.ToString());
+                  
+                e.Player.SendSuccessMessage(item.Name + " has been restored to default values.");
+                return;
+            }
+            else
+            {
+                e.Player.SendErrorMessage(item.Name + " is not stored. Use [c/FFFF00:/tweak <item name | ID>] to add it.");
+            }
+        }
         public void ItemTweak(CommandArgs e)
         {
             var param = e.Parameters;
@@ -907,12 +951,17 @@ namespace ArcticCircle
             
             if (param.Count == 0)
             {
-                e.Player.SendErrorMessage("There was a parametere error. Try: [c/FFFF00:/tweak <item name | ID>] to store it.");
+                e.Player.SendErrorMessage("There was a parameter error. Try: [c/FFFF00:/tweak <item name | ID>] to store it.");
                 return;
             }
 
             var list = TShock.Utils.GetItemByIdOrName(param[0]);
             var data = Plugin.Instance.item_data;
+            if (list.Count == 0)
+            {
+                e.Player.SendErrorMessage("Item " + param[0] + " not found.");
+                return;
+            }
             Item item = list[0];
             
             Block block;
@@ -941,16 +990,11 @@ namespace ArcticCircle
 
             if (param.Count < 3)
             {
-                e.Player.SendErrorMessage("There was a parametere error. Try: [c/FFFF00:/tweak <item name | ID> <parameter> <#>]\n" +
+                e.Player.SendErrorMessage("There was a parameter error. Try: [c/FFFF00:/tweak <item name | ID> <parameter> <#>]\n" +
                         "Available parameters:[c/FFFF00:" + List.Replace(":", "").Replace("0", "").TrimEnd(',', ' ') +  "].");
                 return;
             }
             
-            if (list.Count == 0)
-            {
-                e.Player.SendErrorMessage("Item " + param[0] + " not found.");
-                return;
-            }
             if (!List.Contains(param[1].ToLower()))
             {
                 e.Player.SendErrorMessage(param[1] + " was an invalid parameter.\n" +
