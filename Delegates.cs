@@ -904,14 +904,48 @@ namespace ArcticCircle
             string List = " ";
                 for (int i = 0; i < Parameters.Length; i++)
                     List += Parameters[i] + ", ";
+            
+            if (param.Count == 0)
+            {
+                e.Player.SendErrorMessage("There was a parametere error. Try: [c/FFFF00:/tweak <item name | ID>] to store it.");
+                return;
+            }
+
+            var list = TShock.Utils.GetItemByIdOrName(param[0]);
+            var data = Plugin.Instance.item_data;
+            Item item = list[0];
+            
+            Block block;
+            if (!data.BlockExists(item.Name))
+            {
+                block = data.NewBlock(Parameters, item.Name);
+
+                block.WriteValue(Parameters[Width].TrimEnd(':', '0'), item.width.ToString());
+                block.WriteValue(Parameters[Height].TrimEnd(':', '0'), item.height.ToString());
+                block.WriteValue(Parameters[Damage].TrimEnd(':', '0'), item.damage.ToString());
+                block.WriteValue(Parameters[Crit].TrimEnd(':', '0'), item.crit.ToString());
+                block.WriteValue(Parameters[KB].TrimEnd(':', '0'), item.knockBack.ToString());
+                block.WriteValue(Parameters[Prefix].TrimEnd(':', '0'), item.prefix.ToString());
+                block.WriteValue(Parameters[ReuseDelay].TrimEnd(':', '0'), item.reuseDelay.ToString());
+                block.WriteValue(Parameters[Shoot].TrimEnd(':', '0'), item.shoot.ToString());
+                block.WriteValue(Parameters[ShootSpeed].TrimEnd(':', '0'), item.shootSpeed.ToString());
+                block.WriteValue(Parameters[UseAmmo].TrimEnd(':', '0'), item.useAmmo.ToString());
+                block.WriteValue(Parameters[UseTime].TrimEnd(':', '0'), item.useTime.ToString());
+                block.WriteValue(Parameters[AutoReuse].TrimEnd(':', '0'), item.autoReuse.ToString());
+                block.WriteValue(Parameters[Ammo].TrimEnd(':', '0'), item.ammo.ToString());
+                block.WriteValue(Parameters[Scale].TrimEnd(':', '0'), item.scale.ToString());
+                  
+                e.Player.SendSuccessMessage(item.Name + " has been stored. Use [c/FFFF00:/tweak] again to change its attributes.");
+                return;
+            }
+
             if (param.Count < 3)
             {
                 e.Player.SendErrorMessage("There was a parametere error. Try: [c/FFFF00:/tweak <item name | ID> <parameter> <#>]\n" +
                         "Available parameters:[c/FFFF00:" + List.Replace(":", "").Replace("0", "").TrimEnd(',', ' ') +  "].");
                 return;
             }
-
-            var list = TShock.Utils.GetItemByIdOrName(param[0]);
+            
             if (list.Count == 0)
             {
                 e.Player.SendErrorMessage("Item " + param[0] + " not found.");
@@ -923,58 +957,26 @@ namespace ArcticCircle
                         "Available parameters:[c/FFFF00:" + List.Replace(":", "").Replace("0", "").TrimEnd(',', ' ') +  "].");
                 return;
             }
-
-            var data = Plugin.Instance.item_data;
-            Item item = list[0];
-        
-            Block block;
-            if (!data.BlockExists(item.Name))
-            {
-                block = data.NewBlock(Parameters, item.Name);
-/*
-                block.WriteValue(Parameters[Width], item.width.ToString());
-                block.WriteValue(Parameters[Height], item.height.ToString());
-                block.WriteValue(Parameters[Damage], item.damage.ToString());
-                block.WriteValue(Parameters[Crit], item.crit.ToString());
-                block.WriteValue(Parameters[KB], item.knockBack.ToString());
-                block.WriteValue(Parameters[Prefix], item.prefix.ToString());
-                block.WriteValue(Parameters[ReuseDelay], item.reuseDelay.ToString());
-                block.WriteValue(Parameters[Shoot], item.shoot.ToString());
-                block.WriteValue(Parameters[ShootSpeed], item.shootSpeed.ToString());
-                block.WriteValue(Parameters[UseAmmo], item.useAmmo.ToString());
-                block.WriteValue(Parameters[UseTime], item.useTime.ToString());
-                block.WriteValue(Parameters[AutoReuse], item.autoReuse.ToString());
-                block.WriteValue(Parameters[Ammo], item.ammo.ToString());
-                block.WriteValue(Parameters[Scale], item.scale.ToString());*/
-                  
-                e.Player.SendSuccessMessage(item.Name + " has been stored. Use [c/FFFF00:/tweak] again to change its attributes.");
-                return;
-            }
-            else
-            {
-                block = data.GetBlock(item.Name);
-                block.WriteValue(param[1], param[2]);
-            }
+            
+            block = data.GetBlock(item.Name);
+            block.WriteValue(param[1], param[2]);
+            
             e.Player.SendSuccessMessage(string.Format("{0}'s {1} attribute changed to {2}.", item.Name, param[1], param[2]));
         }
         public void ItemGet(CommandArgs e)
         {
             var param = e.Parameters;
 
+            if (param.Count == 0)
+            {
+                e.Player.SendErrorMessage("Not enough information. Use [c/FFFF00:/giveitem <iten name | ID> <stack #>].");
+                return;
+            }
+
             string List = " ";
                 for (int i = 0; i < Parameters.Length; i++)
                     List += Parameters[i] + ", ";
 
-            if (param.Count < 2)
-            {
-                e.Player.SendErrorMessage("Not enough information. Use [c/FFFF00:/giveitem <iten name | ID> <stack #> <attributes 1> <attribute 2>...]\n" +
-                        "Available parameters:[c/FFFF00:" + List.Replace(":", "").Replace("0", "").TrimEnd(',', ' ') +  "].");
-                return;
-            }
-
-            int stack = 0;
-            if (!int.TryParse(param[1], out stack))
-                stack = 1;
             var itemList = TShock.Utils.GetItemByIdOrName(param[0]);
 
             if (itemList.Count == 0)
@@ -991,42 +993,52 @@ namespace ArcticCircle
                 e.Player.SendErrorMessage("Item " + param[0] + " has no reference stored. [c/FFFF00:First add it using /tweak].");
                 return;
             }
+            if (param.Count < 2)
+            {
+                e.Player.SendErrorMessage("Not enough information. Use [c/FFFF00:/giveitem <iten name | ID> <stack #>]"); //+
+                        /*"Available parameters:[c/FFFF00:" + List.Replace(":", "").Replace("0", "").TrimEnd(',', ' ') +  "].");*/
+                return;
+            }
             else
             {
+                int stack = 0;
+                if (!int.TryParse(param[1], out stack))
+                    stack = 1;
+
                 block = data.GetBlock(getItem.Name);
 
                 //byte.TryParse(block.GetValue(Parameters[Prefix]), out byte prefix);
                 int index = Item.NewItem(e.TPlayer.position, new Microsoft.Xna.Framework.Vector2(32, 48), getItem.type, stack);
 
                 Item item = Main.item[index];
-                if (param.Contains(Parameters[Damage]))
-                    item.damage = int.Parse(block.GetValue(Parameters[Damage]));
-                if (param.Contains(Parameters[Crit]))
-                    item.crit = int.Parse(block.GetValue(Parameters[Crit]));
-                if (param.Contains(Parameters[KB])) 
-                    item.knockBack = float.Parse(block.GetValue(Parameters[KB]));
-                if (param.Contains(Parameters[Prefix]))
-                    item.prefix = byte.Parse(block.GetValue(Parameters[Prefix]));
-                if (param.Contains(Parameters[ReuseDelay]))
-                    item.reuseDelay = int.Parse(block.GetValue(Parameters[ReuseDelay]));
-                if (param.Contains(Parameters[Shoot]))
-                    item.shoot = int.Parse(block.GetValue(Parameters[Shoot]));
-                if (param.Contains(Parameters[ShootSpeed]))
-                    item.shootSpeed = float.Parse(block.GetValue(Parameters[ShootSpeed]));
-                if (param.Contains(Parameters[UseAmmo]))
-                    item.useAmmo = int.Parse(block.GetValue(Parameters[UseAmmo]));
-                if (param.Contains(Parameters[UseTime]))
-                    item.useTime = int.Parse(block.GetValue(Parameters[UseTime]));
-                if (param.Contains(Parameters[Width]))
-                    item.width = int.Parse(block.GetValue(Parameters[Width]));
-                if (param.Contains(Parameters[Height]))
-                    item.height = int.Parse(block.GetValue(Parameters[Height]));
-                if (param.Contains(Parameters[AutoReuse]))
-                    item.autoReuse = bool.Parse(block.GetValue(Parameters[AutoReuse]));
-                if (param.Contains(Parameters[Ammo]))
-                    item.ammo = int.Parse(block.GetValue(Parameters[Ammo]));
-                if (param.Contains(Parameters[Scale]))
-                    item.scale = float.Parse(block.GetValue(Parameters[Scale]));
+                //if (param.Contains(Parameters[Damage]))
+                    int.TryParse(block.GetValue(Parameters[Damage].TrimEnd(':', '0')), out item.damage);
+                //if (param.Contains(Parameters[Crit]))
+                    int.TryParse(block.GetValue(Parameters[Crit].TrimEnd(':', '0')), out item.crit);
+                //if (param.Contains(Parameters[KB])) 
+                    float.TryParse(block.GetValue(Parameters[KB].TrimEnd(':', '0')), out item.knockBack);
+                //if (param.Contains(Parameters[Prefix]))
+                    byte.TryParse(block.GetValue(Parameters[Prefix].TrimEnd(':', '0')), out item.prefix);
+                //if (param.Contains(Parameters[ReuseDelay]))
+                    int.TryParse(block.GetValue(Parameters[ReuseDelay].TrimEnd(':', '0')), out item.reuseDelay);
+                //if (param.Contains(Parameters[Shoot]))
+                    int.TryParse(block.GetValue(Parameters[Shoot].TrimEnd(':', '0')), out item.shoot);
+                //if (param.Contains(Parameters[ShootSpeed]))
+                    float.TryParse(block.GetValue(Parameters[ShootSpeed].TrimEnd(':', '0')), out item.shootSpeed);
+                //if (param.Contains(Parameters[UseAmmo]))
+                    int.TryParse(block.GetValue(Parameters[UseAmmo].TrimEnd(':', '0')), out item.useAmmo);
+                //if (param.Contains(Parameters[UseTime]))
+                    int.TryParse(block.GetValue(Parameters[UseTime].TrimEnd(':', '0')), out item.useTime);
+                //if (param.Contains(Parameters[Width]))
+                    int.TryParse(block.GetValue(Parameters[Width].TrimEnd(':', '0')), out item.width);
+                //if (param.Contains(Parameters[Height]))
+                    int.TryParse(block.GetValue(Parameters[Height].TrimEnd(':', '0')), out item.height);
+                //if (param.Contains(Parameters[AutoReuse]))
+                    bool.TryParse(block.GetValue(Parameters[AutoReuse].TrimEnd(':', '0')), out item.autoReuse);
+                //if (param.Contains(Parameters[Ammo]))
+                    int.TryParse(block.GetValue(Parameters[Ammo].TrimEnd(':', '0')), out item.ammo);
+                //if (param.Contains(Parameters[Scale]))
+                    float.TryParse(block.GetValue(Parameters[Scale].TrimEnd(':', '0')), out item.scale);
 
                 TSPlayer.All.SendData(PacketTypes.TweakItem, "", index, 255, 63);
             }
