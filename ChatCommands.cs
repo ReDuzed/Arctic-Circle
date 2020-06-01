@@ -155,7 +155,7 @@ namespace ArcticCircle
                 {
                     PaginationTools.SendPage(e.Player, 1, list);
                 }
-            }, "kickall")
+            }, "teamhelp")
             {
                 HelpText = "Provides help pages for commands"
             });

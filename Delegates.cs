@@ -90,11 +90,15 @@ namespace ArcticCircle
                 }
 
                 Utils.ResetPlayer(e.Player);
-
-                if (itemSet[Utils.ClassSet(param)].Length > 0)
+                int index = Utils.ClassSet(param);
+                if (index < 0)
                 {
-                    int index;
-                    if ((index = Utils.ClassSet(param)) >= 0)
+                    e.Player.SendErrorMessage("No such class was found. Try '/chooseclass [c/FFFF00:'" + classes.TrimEnd(' ') + "'] instead.");
+                    return;
+                }
+                if (itemSet[index].Length > 0)
+                {
+                    if (index >= 0)
                     {
                         string[] array = itemSet[index].Trim(' ').Split(',');
                         for (int j = 0; j < array.Length; j++)
@@ -125,6 +129,22 @@ namespace ArcticCircle
                             #region Tried & works | bad formatting
                             if (int.TryParse(array[j], out type))
                             {
+                                var data = Plugin.Instance.item_data;
+                                var list = TShock.Utils.GetItemByIdOrName(type.ToString());
+                                Item item = null;
+                                Block block = new Block() 
+                                {
+                                    active = false
+                                };
+                                if (list.Count > 0)
+                                {
+                                    item = list[0];
+                                    if (data.BlockExists(item.Name))
+                                    {
+                                        block = data.GetBlock(item.Name);
+                                        block.active = true;
+                                    }
+                                }
                                 int stack = j + 1;
                                 if (stack < array.Length)
                                 {
@@ -133,11 +153,19 @@ namespace ArcticCircle
                                         j++;
                                         if (int.TryParse(array[stack].Substring(1), out stack))
                                         {
-                                            e.Player.GiveItem(type, stack);
+                                            if (block.active)
+                                            {
+                                                ItemGet(new CommandArgs("giveitem", e.Player, new List<string>() { type.ToString(), stack.ToString(), 0.ToString() }));
+                                            }
+                                            else e.Player.GiveItem(type, stack);
                                             continue;
                                         }
                                         else
                                         {
+                                            if (block.active)
+                                            {
+                                                ItemGet(new CommandArgs("giveitem", e.Player, new List<string>() { type.ToString(), 1.ToString(), 0.ToString() }));
+                                            }
                                             e.Player.GiveItem(type, 1);
                                             continue;
                                         }
@@ -151,17 +179,29 @@ namespace ArcticCircle
                                         j++;
                                         if (int.TryParse(array[prefix].Substring(1), out prefix))
                                         {
-                                            e.Player.GiveItem(type, 1, prefix);
+                                            if (block.active)
+                                            {
+                                                ItemGet(new CommandArgs("giveitem", e.Player, new List<string>() { type.ToString(), 1.ToString(), prefix.ToString() }));
+                                            }
+                                            else e.Player.GiveItem(type, 1, prefix);
                                             continue;
                                         }
                                         else
                                         {   
-                                            e.Player.GiveItem(type, 1);
+                                            if (block.active)
+                                            {
+                                                ItemGet(new CommandArgs("giveitem", e.Player, new List<string>() { type.ToString(), 1.ToString(), 0.ToString() }));
+                                            }
+                                            else e.Player.GiveItem(type, 1);
                                             continue;
                                         }
                                     }
                                 }
-                                e.Player.GiveItem(type, 1);
+                                if (block.active)
+                                {
+                                    ItemGet(new CommandArgs("giveitem", e.Player, new List<string>() { type.ToString(), 1.ToString(), 0.ToString() }));
+                                }
+                                else e.Player.GiveItem(type, 1);
                             }
                             #endregion
                         }
@@ -1011,9 +1051,9 @@ namespace ArcticCircle
         {
             var param = e.Parameters;
 
-            if (param.Count == 0)
+            if (param.Count == 0 || param.Count < 3)
             {
-                e.Player.SendErrorMessage("Not enough information. Use [c/FFFF00:/giveitem <iten name | ID> <stack #>].");
+                e.Player.SendErrorMessage("Not enough information. Use [c/FFFF00:/giveitem <iten name | ID> <stack #> <prefix #>].");
                 return;
             }
 
@@ -1051,8 +1091,8 @@ namespace ArcticCircle
 
                 block = data.GetBlock(getItem.Name);
 
-                //byte.TryParse(block.GetValue(Parameters[Prefix]), out byte prefix);
-                int index = Item.NewItem(e.TPlayer.position, new Microsoft.Xna.Framework.Vector2(32, 48), getItem.type, stack);
+                byte.TryParse(block.GetValue(param[2]), out byte prefix);
+                int index = Item.NewItem(e.TPlayer.position, new Microsoft.Xna.Framework.Vector2(32, 48), getItem.type, stack, false, prefix);
 
                 Item item = Main.item[index];
                 //if (param.Contains(Parameters[Damage]))

@@ -36,7 +36,7 @@ namespace ArcticCircle
 
         public static int ClassSet(string param)
         {
-            if (ClassID.Array == null || ClassID.Array.Length == 0)
+            if (!ClassID.Array.Contains(param) || ClassID.Array.Length == 0)
                 return -1;
             for (int i = 0; i < ClassID.Array.Length; i++)
             {
