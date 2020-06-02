@@ -54,13 +54,17 @@ namespace ArcticCircle
             return NetItem.InventorySlots + NetItem.MiscDyeSlots + NetItem.MiscEquipSlots + NetItem.ArmorSlots + NetItem.DyeSlots + NetItem.TrashSlots;
         }
 
-        public static void UpdateItem(Item item, int slot, int who, bool remove = false, int stack = 1)
+        public static void UpdateItem(Item item, int slot, int who, bool remove = false, int stack = 1, bool custom = false)
         {
             if (remove)
             {
                 item.active = false;
                 item.type = 0;
                 item.netDefaults(0);
+            }
+            else
+            {
+                Main.player[who].inventory[slot] = item;
             }
             item.stack = stack;
             NetMessage.SendData((int)PacketTypes.PlayerSlot, -1, -1, NetworkText.FromLiteral(item.Name), who, slot, item.prefix);

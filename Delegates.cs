@@ -501,7 +501,7 @@ namespace ArcticCircle
                 return;
             }
 
-            string userName = e.Message.Substring(e.Message.IndexOf(" ") + 1);
+            string userName = e.Parameters[0];
             TSPlayer player = Util.FindPlayer(userName);
             if (player == null)
             {
