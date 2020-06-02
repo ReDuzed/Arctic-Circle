@@ -53,7 +53,6 @@ namespace ArcticCircle
             ServerApi.Hooks.ServerLeave.Register(this, Hooks.Instance.OnLeave);
             ServerApi.Hooks.GameUpdate.Register(this, Hooks.Instance.ItemClassGameUpdate);
             ServerApi.Hooks.NetGetData.Register(this, Hooks.Instance.OnGetData);
-            // Commented out as this packet causes an unresolved loop of generating the same items upon class designation.
             GetDataHandlers.ItemDrop += Hooks.Instance.OnItemDrop;
 
             Utils.SetDefaultStats();
