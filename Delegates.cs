@@ -52,6 +52,7 @@ namespace ArcticCircle
         public Block spawn;
         public Block setting;
 
+        #region Classes
         public void ChooseClass(CommandArgs e)
         {
             bool canBypass = e.Player.HasPermission("classes.admin.bypass");
@@ -290,6 +291,7 @@ namespace ArcticCircle
 
             tsPlayer.SendSuccessMessage("The " + className + " class was successfully added! Please use /reload or restart the server to be able to use the class.");
         }
+        #endregion
 
         public void Reload(CommandArgs e)
         {
@@ -448,17 +450,7 @@ namespace ArcticCircle
             else e.Player.SendSuccessMessage("[c/FF0000:PlayerClasses] Successfully reloaded the Plugin.classINI.");
             #endregion
         }
-        public void ResetOption(CommandArgs e)
-        {
-            if (e.Message.Contains(" "))
-            {
-                string userName = e.Message.Substring(e.Message.IndexOf(" ") + 1);
-                TSPlayer player = Util.FindPlayer(userName);
-                hasChosenClass[Util.FindPlayer(userName).Index] = false;
-                e.Player.SendSuccessMessage(player.Name + " has had their class removed.");
-            }
-            e.Player.SendErrorMessage("Try '/resetopt <user name>' instead.");
-        }
+
         public void Start(CommandArgs e)
         {
             Action error = delegate()
@@ -485,6 +477,7 @@ namespace ArcticCircle
                 error();
             }
         }
+       
         public void ResetAll(CommandArgs e)
         {
             string list = " ";
@@ -499,8 +492,25 @@ namespace ArcticCircle
             }
             e.Player.SendSuccessMessage("The users:" + list + "have had their classes removed.");
         }
-        
 
+        public void ResetOption(CommandArgs e)
+        {
+            if (e.Parameters.Count < 1)
+            {
+                e.Player.SendErrorMessage("Try '/resetopt <user name>' instead.");
+                return;
+            }
+
+            string userName = e.Message.Substring(e.Message.IndexOf(" ") + 1);
+            TSPlayer player = Util.FindPlayer(userName);
+            if (player == null)
+            {
+                e.Player.SendErrorMessage("The player was not found!");
+                return;
+            }
+            hasChosenClass[Util.FindPlayer(userName).Index] = false;
+            e.Player.SendSuccessMessage(player.Name + " has had their class removed.");
+        }
 
         #region Team Set
         public void KickAll(CommandArgs e)
