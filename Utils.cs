@@ -301,7 +301,7 @@ namespace ArcticCircle
         public const string Empty = "0";
         public static void TeamTeleport(string name, int whoAmI)
         {
-            string team = Delegates.informal[GetPlayerTeam(name)];
+            string team = Delegates.Informal[GetPlayerTeam(name)];
             string[] s = Delegates.Instance.spawn.GetValue(team).Split('x');
             string sX = s[0];
             string sY = s[1];
