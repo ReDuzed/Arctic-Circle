@@ -6,6 +6,7 @@ using Terraria;
 using Terraria.ID;
 using Terraria.Localization;
 using TShockAPI;
+using TShockAPI.DB;
 using TerrariaApi.Server;
 using RUDD.Dotnet;
 using static TShockAPI.GetDataHandlers;
@@ -42,6 +43,19 @@ namespace ArcticCircle
                         }
                     }
                     preMatchChoose = false;
+                }
+            }
+            if ((int)Main.time % 20 != 0)
+                return;
+            foreach (TSPlayer player in TShock.Players)
+            {
+                if (player != null && player.Active && !player.Dead)
+                {
+                    Region region = HighestAxis(player.TPlayer, out int z);
+                    if (region == null)
+                        continue;
+                    if (Delegates.Instance.pvpRules.ContainsKey(region.Name.ToLower()))
+                        TogglePvp(player.Index, Delegates.Instance.pvpRules[region.Name.ToLower()]);
                 }
             }
         }

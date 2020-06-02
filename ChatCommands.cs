@@ -166,6 +166,9 @@ namespace ArcticCircle
             add(new Command("item.admin.get", DEL.ItemGet, new string[] { "giveitem" }));
             add(new Command("item.admin.add", DEL.ItemRestore, new string[] { "resetitem" }));
             #endregion
+
+            // Safe Regions v2
+            add(new Command("saferegion.admin.setup", DEL.Setup, new string[] { "region", "sr", "load" }));
         }
     }
 }

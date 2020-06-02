@@ -1123,5 +1123,71 @@ namespace ArcticCircle
             }
         }
         #endregion
+
+
+        #region Safe Regions v2
+        public const string Heading = "Regions";
+        public const int Max = 256;
+        public Dictionary<string,bool> pvpRules = new Dictionary<string, bool>(Max);
+        public void Setup(CommandArgs e)
+        {
+            var regionData = Plugin.Instance.regionData;
+            if (e.Message.StartsWith("load"))
+            {
+                int count = 0;
+                var regions = TShock.Regions.Regions;
+                for (int i = 0; i < Max; i++)
+                {
+                    if (i >= regions.Count)
+                        break;
+                    if (!pvpRules.Keys.Contains(regions[i].Name.ToLower()))
+                    {
+                        count++;
+                        pvpRules.Add(regions[i].Name.ToLower(), false);
+                    }
+                }
+                e.Player.SendSuccessMessage(count + " regions loaded into the database.");
+            }
+            if (e.Message.StartsWith("region") && e.Message.Contains("define"))
+            {
+                pvpRules.Add(e.Message.Substring(14).ToLower(), false);
+                e.Player.SendSuccessMessage("Region " + e.Message.Substring(14) + " has been logged into the database.");
+                return;
+            }
+            if (e.Message.StartsWith("sr") && e.Message.Contains(" "))
+            {
+                Block block = regionData.GetBlock(Heading);
+                string sub = e.Message.Substring(e.Message.IndexOf(" ") + 1).ToLower();
+                if (sub.Contains(" "))
+                {
+                    string arg = sub.Substring(sub.LastIndexOf(" ") + 1);
+                    sub = sub.Substring(0, sub.IndexOf(" "));
+                    var region = TShock.Regions.Regions.Where(t => t.Name.ToLower() == arg.ToLower()).ToArray();
+                    if (region.Length > 0)
+                    {
+                        if (sub == "pvp")
+                        {
+                            pvpRules[arg] = !pvpRules[arg];
+                            block.WriteValue(Utils.GetKey(block, arg), region[0].Name.ToLower(), pvpRules[arg]);
+                            e.Player.SendSuccessMessage(pvpRules[arg] ? arg + " region is now PvP enabled." : arg + " region has PvP turned off.");
+                            return;
+                        }
+                    }
+                    e.Player.SendErrorMessage("There was an error in region name input.");
+                    return;
+                }
+                if (sub.ToLower() == "help")
+                {
+                    e.Player.SendErrorMessage("Flips the PvP status of the region: [c/FFFF00:/sr pvp <region name>]");
+                    return;
+                }
+                e.Player.SendErrorMessage("Flips the PvP status of the region: [c/FFFF00:/sr pvp <region name>]");
+            }
+            else
+            {
+                e.Player.SendErrorMessage("Flips the PvP status of the region: [c/FFFF00:/sr pvp <region name>]");
+            }
+        }
+        #endregion
     }
 }
