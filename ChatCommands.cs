@@ -22,10 +22,10 @@ namespace ArcticCircle
         public void AddCommands()
         {
             var DEL = Delegates.Instance;
-            Action<Command> add = delegate(Command cmd)
+            void add(Command cmd)
             {
                 Commands.ChatCommands.Add(cmd);
-            };
+            }
             #region Item Classes
             add(new Command("classes.user.choose", DEL.ChooseClass, "chooseclass") { HelpText = "" });
             add(new Command("classes.admin.add", DEL.AddClass, "addclass") { HelpText = "" });
