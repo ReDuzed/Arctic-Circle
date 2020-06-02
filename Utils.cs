@@ -306,9 +306,8 @@ namespace ArcticCircle
             string[] s = Delegates.Instance.spawn.GetValue(team).Split('x');
             string sX = s[0];
             string sY = s[1];
-            float x, y;
-            float.TryParse(sX, out x);
-            float.TryParse(sY, out y);
+            float.TryParse(sX, out float x);
+            float.TryParse(sY, out float y);
             TShock.Players[whoAmI].Teleport(x, y);
             TShock.Players[whoAmI].SendSuccessMessage(string.Format("You have been sent to {0}'s spawn at {1}:{2}.", team, x, y));
         }
