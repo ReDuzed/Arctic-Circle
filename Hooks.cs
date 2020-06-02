@@ -123,8 +123,8 @@ namespace ArcticCircle
         {
             // TODO: Fix issue where the player can dodge the falling item by dashing or moving fast using wings.
 
-            // OnItemDrop gets called when picking up the item as well for some reason and it has an ItemDropEventArgs.ID of 0.
-            if (e.ID == 0)
+            // Check if the player is picking up an item (E.g. from /chooseclass).
+            if (e.ID < 400)
             {
                 return;
             }
