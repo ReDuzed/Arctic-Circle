@@ -129,14 +129,14 @@ namespace ArcticCircle
                 return;
             }
 
-            //e.Handled = true;
+            e.Handled = true;
 
             TSPlayer tsPlayer = e.Player;
             Player player = tsPlayer.TPlayer;
             
             // TODO: Being given a large number of items causes the drops to duplicate in a loop after the packets resend upon receiving the same set of items.
-            if (hasChosenClass[tsPlayer.Index])
-                return;
+            //if (hasChosenClass[tsPlayer.Index])
+            //    return;
             
             string itemName = TShock.Utils.GetItemById(e.Type).Name;
 

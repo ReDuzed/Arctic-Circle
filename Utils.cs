@@ -62,9 +62,31 @@ namespace ArcticCircle
                 item.type = 0;
                 item.netDefaults(0);
             }
-            else
+            else if (custom)
             {
                 Main.player[who].inventory[slot] = item;
+                item = Main.player[who].inventory[slot];
+                string itemName = item.Name;
+                var data = Plugin.Instance.item_data;
+                if (data.BlockExists(itemName))
+                {
+                    Block block = data.GetBlock(itemName);
+
+                    int.TryParse(block.GetValue(Parameters[Damage].TrimEnd(':', '0')), out item.damage);
+                    int.TryParse(block.GetValue(Parameters[Crit].TrimEnd(':', '0')), out item.crit);
+                    float.TryParse(block.GetValue(Parameters[KB].TrimEnd(':', '0')), out item.knockBack);
+                    byte.TryParse(block.GetValue(Parameters[Prefix].TrimEnd(':', '0')), out item.prefix);
+                    int.TryParse(block.GetValue(Parameters[ReuseDelay].TrimEnd(':', '0')), out item.reuseDelay);
+                    int.TryParse(block.GetValue(Parameters[Shoot].TrimEnd(':', '0')), out item.shoot);
+                    float.TryParse(block.GetValue(Parameters[ShootSpeed].TrimEnd(':', '0')), out item.shootSpeed);
+                    int.TryParse(block.GetValue(Parameters[UseAmmo].TrimEnd(':', '0')), out item.useAmmo);
+                    int.TryParse(block.GetValue(Parameters[UseTime].TrimEnd(':', '0')), out item.useTime);
+                    int.TryParse(block.GetValue(Parameters[Width].TrimEnd(':', '0')), out item.width);
+                    int.TryParse(block.GetValue(Parameters[Height].TrimEnd(':', '0')), out item.height);
+                    bool.TryParse(block.GetValue(Parameters[AutoReuse].TrimEnd(':', '0')), out item.autoReuse);
+                    int.TryParse(block.GetValue(Parameters[Ammo].TrimEnd(':', '0')), out item.ammo);
+                    float.TryParse(block.GetValue(Parameters[Scale].TrimEnd(':', '0')), out item.scale);
+                }
             }
             item.stack = stack;
             NetMessage.SendData((int)PacketTypes.PlayerSlot, -1, -1, NetworkText.FromLiteral(item.Name), who, slot, item.prefix);

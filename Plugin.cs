@@ -45,7 +45,7 @@ namespace ArcticCircle
             ServerApi.Hooks.GameUpdate.Register(this, Hooks.Instance.ItemClassGameUpdate);
             ServerApi.Hooks.NetGetData.Register(this, Hooks.Instance.OnGetData);
             // Commented out as this packet causes an unresolved loop of generating the same items upon class designation.
-            //GetDataHandlers.ItemDrop += Hooks.Instance.OnItemDrop;
+            GetDataHandlers.ItemDrop += Hooks.Instance.OnItemDrop;
 
             Utils.SetDefaultStats();
         }
@@ -59,7 +59,7 @@ namespace ArcticCircle
                 ServerApi.Hooks.ServerLeave.Deregister(this, Hooks.Instance.OnLeave);
                 ServerApi.Hooks.GameUpdate.Deregister(this, Hooks.Instance.ItemClassGameUpdate);
                 ServerApi.Hooks.NetGetData.Deregister(this, Hooks.Instance.OnGetData);
-                //GetDataHandlers.ItemDrop -= Hooks.Instance.OnItemDrop;
+                GetDataHandlers.ItemDrop -= Hooks.Instance.OnItemDrop;
             }
         }
     }
