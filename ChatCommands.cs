@@ -22,10 +22,10 @@ namespace ArcticCircle
         public void AddCommands()
         {
             var DEL = Delegates.Instance;
-            void add(Command cmd)
+            Action<Command> add = delegate(Command cmd)
             {
                 Commands.ChatCommands.Add(cmd);
-            }
+            };
             #region Item Classes
             add(new Command("classes.user.choose", DEL.ChooseClass, "chooseclass") { HelpText = "" });
             add(new Command("classes.admin.add", DEL.AddClass, "addclass") { HelpText = "" });
@@ -105,7 +105,7 @@ namespace ArcticCircle
             add(new Command("teamset.help", delegate(CommandArgs a)
             {
                 a.Player.SendInfoMessage(string.Format("{0} <index | color>, {1} <name>\n{2}\n{3} automates team group creation parented to group default\n{4} <team color> <group>\n{5} <color | index>\n{6} team spawn switch\n{7} <color> places spawn at your current position\n{8} teleports to team spawn\n{9} switches player on leave being removed from team\n{10} <<1-5>,<1-5>,[<1-5>]...> use 2 or more team indices to autosort into said teams \n{11} <reset | init <#>> Useful for expanding the maximum number of players per team \n{12} <all | team | [username]> Teleport whole everyone, team, or single player to their team spawn \n{13} removes everyone from their teams",
-                                        "/placeteam", "/removeteam", "/reload", "/teamgroups", "/teamset", "/jointeam", "/tspawn", "/settspawn", "/teamspawn", "/teamleavekick", "/autosort", "/database", "/tpteam", "/kickall"));
+                                        "/placeteam", "/removeteam", "/reload", "/teamgroups", "/teamset", "/jointeam", "/tspawn", "/settspawn", "/teamspawn", "/teamleavekick", "/autosort", "/database", "/tpteam", "/resetteams"));
             }, "teamscrip")
             {
                 HelpText = "Toggles whether players can use /tspawn to go to team spawn locations."
@@ -139,7 +139,7 @@ namespace ArcticCircle
             {
                 HelpText = "Flag for automatically assigning members to configured groups upon team join"
             });
-            add(new Command("teamset.admin.kick", DEL.KickAll, "kickall")
+            add(new Command("teamset.admin.kick", DEL.KickAll, "resetteams")
             {
                 HelpText = "Removes all server member's teams"
             });
