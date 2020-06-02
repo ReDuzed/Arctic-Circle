@@ -121,35 +121,43 @@ namespace ArcticCircle
 
         public void OnItemDrop(object sender, ItemDropEventArgs e)
         {
+            // TODO: Fix issue where the player can dodge the falling item by dashing or moving fast using wings.
+
+            // OnItemDrop gets called when picking up the item as well for some reason and it has an ItemDropEventArgs.ID of 0.
+            if (e.ID == 0)
+            {
+                return;
+            }
+
+            e.Handled = true;
+
             TSPlayer tsPlayer = e.Player;
             Player player = tsPlayer.TPlayer;
 
-            Item item = TShock.Utils.GetItemById(e.Type);
+            string itemName = TShock.Utils.GetItemById(e.Type).Name;
+
+            int index = Item.NewItem(player.position, new Microsoft.Xna.Framework.Vector2(32, 48), e.Type, e.Stacks);
+            Item item = Main.item[index];
 
             var data = Plugin.Instance.item_data;
-            if (data.BlockExists(item.Name))
+            if (data.BlockExists(itemName))
             {
-                e.Handled = true;
+                Block block = data.GetBlock(itemName);
 
-                Block block = data.GetBlock(item.Name);
-
-                int index = Item.NewItem(player.position, new Microsoft.Xna.Framework.Vector2(32, 48), item.type, e.Stacks);
-                Item newItem = Main.item[index];
-
-                int.TryParse(block.GetValue(Parameters[Damage].TrimEnd(':', '0')), out newItem.damage);
-                int.TryParse(block.GetValue(Parameters[Crit].TrimEnd(':', '0')), out newItem.crit);
-                float.TryParse(block.GetValue(Parameters[KB].TrimEnd(':', '0')), out newItem.knockBack);
-                byte.TryParse(block.GetValue(Parameters[Prefix].TrimEnd(':', '0')), out newItem.prefix);
-                int.TryParse(block.GetValue(Parameters[ReuseDelay].TrimEnd(':', '0')), out newItem.reuseDelay);
-                int.TryParse(block.GetValue(Parameters[Shoot].TrimEnd(':', '0')), out newItem.shoot);
-                float.TryParse(block.GetValue(Parameters[ShootSpeed].TrimEnd(':', '0')), out newItem.shootSpeed);
-                int.TryParse(block.GetValue(Parameters[UseAmmo].TrimEnd(':', '0')), out newItem.useAmmo);
-                int.TryParse(block.GetValue(Parameters[UseTime].TrimEnd(':', '0')), out newItem.useTime);
-                int.TryParse(block.GetValue(Parameters[Width].TrimEnd(':', '0')), out newItem.width);
-                int.TryParse(block.GetValue(Parameters[Height].TrimEnd(':', '0')), out newItem.height);
-                bool.TryParse(block.GetValue(Parameters[AutoReuse].TrimEnd(':', '0')), out newItem.autoReuse);
-                int.TryParse(block.GetValue(Parameters[Ammo].TrimEnd(':', '0')), out newItem.ammo);
-                float.TryParse(block.GetValue(Parameters[Scale].TrimEnd(':', '0')), out newItem.scale);
+                int.TryParse(block.GetValue(Parameters[Damage].TrimEnd(':', '0')), out item.damage);
+                int.TryParse(block.GetValue(Parameters[Crit].TrimEnd(':', '0')), out item.crit);
+                float.TryParse(block.GetValue(Parameters[KB].TrimEnd(':', '0')), out item.knockBack);
+                byte.TryParse(block.GetValue(Parameters[Prefix].TrimEnd(':', '0')), out item.prefix);
+                int.TryParse(block.GetValue(Parameters[ReuseDelay].TrimEnd(':', '0')), out item.reuseDelay);
+                int.TryParse(block.GetValue(Parameters[Shoot].TrimEnd(':', '0')), out item.shoot);
+                float.TryParse(block.GetValue(Parameters[ShootSpeed].TrimEnd(':', '0')), out item.shootSpeed);
+                int.TryParse(block.GetValue(Parameters[UseAmmo].TrimEnd(':', '0')), out item.useAmmo);
+                int.TryParse(block.GetValue(Parameters[UseTime].TrimEnd(':', '0')), out item.useTime);
+                int.TryParse(block.GetValue(Parameters[Width].TrimEnd(':', '0')), out item.width);
+                int.TryParse(block.GetValue(Parameters[Height].TrimEnd(':', '0')), out item.height);
+                bool.TryParse(block.GetValue(Parameters[AutoReuse].TrimEnd(':', '0')), out item.autoReuse);
+                int.TryParse(block.GetValue(Parameters[Ammo].TrimEnd(':', '0')), out item.ammo);
+                float.TryParse(block.GetValue(Parameters[Scale].TrimEnd(':', '0')), out item.scale);
 
                 TSPlayer.All.SendData(PacketTypes.TweakItem, "", index, 255, 63);
             }
