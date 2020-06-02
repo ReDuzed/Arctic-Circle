@@ -6,6 +6,7 @@ using Terraria;
 using Terraria.ID;
 using Terraria.Localization;
 using TShockAPI;
+using TShockAPI.DB;
 using TerrariaApi.Server;
 using RUDD.Dotnet;
 
@@ -439,6 +440,65 @@ namespace ArcticCircle
                 choose = same;
             }
             return index;
+        }
+        #endregion
+
+
+        #region Safe Regions v2
+        public static Region HighestAxis(Player player, out int z)
+        {
+            int index = -1;
+            z = 0;
+            var all = TShock.Regions.Regions;
+            if (all.Count == 0)
+                return null;
+            for (int i = 0; i < all.Count; i++)
+            {
+                if (all[i].InArea((int)player.Center.X / 16, (int)player.Center.Y / 16))
+                {
+                    if (z < all[i].Z)
+                    {
+                        z = all[i].Z;
+                        index = i;
+                        continue;
+                    }
+                }
+            }
+            return index == -1 ? null : all[index];
+        }
+        public static string GetKey(Block block, string value)
+        {
+            for (int i = 0; i < block.RawData.Length; i++)
+            {
+                var c = block.RawData[i];
+                if (c != null && !string.IsNullOrWhiteSpace(c) && !string.IsNullOrEmpty(c) && c.Contains(value))
+                    return c.Substring(c.IndexOf(":"));
+            }
+            return string.Empty;
+        }
+        public static string[] GetRegionNames(Block block)
+        {
+            string line = "";
+            for (int i = 0; i < block.Contents.Length; i++)
+            {
+                string name;
+                string value = (i + 1).ToString();
+                if ((name = block.GetValue(value)) != "0")
+                {
+                    line += name + ";";
+                }
+            }
+            return line.Split(';');
+        }
+        public static void TogglePvp(int who, bool enabled)
+        {
+            Main.player[who].hostile = enabled;
+            foreach (TSPlayer tsp in TShock.Players)
+            {
+                if (tsp != null) 
+                if (tsp.TPlayer.active)
+                    tsp.SendData(PacketTypes.TogglePvp, "", who);
+            }
         }
         #endregion
     }   

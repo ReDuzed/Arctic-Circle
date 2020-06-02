@@ -30,16 +30,25 @@ namespace ArcticCircle
         public static Ini classINI;
         public DataStore teamData;
         public DataStore item_data;
+        public DataStore regionData;
         public override void Initialize()
         {
             ChatCommands.Instance.AddCommands();
             teamData = new DataStore("config\\team_data");
             item_data = new DataStore("config\\item_data");
+            regionData = new DataStore("config\\region_data");
             classINI = new Ini()
             {
                 path = "config\\class_data" + Ini.ext
             };
             Delegates.Instance.Reload(new CommandArgs(string.Empty, TSPlayer.Server, null));
+            if (!regionData.BlockExists(Delegates.Heading))
+            {
+                string[] array = new string[Delegates.Max];
+                for (int i = 0; i < array.Length; i++)
+                    array[i] += (i + 1);
+                regionData.NewBlock(array, Delegates.Heading);
+            }
             ServerApi.Hooks.ServerJoin.Register(this, Hooks.Instance.OnJoin);
             ServerApi.Hooks.ServerLeave.Register(this, Hooks.Instance.OnLeave);
             ServerApi.Hooks.GameUpdate.Register(this, Hooks.Instance.ItemClassGameUpdate);
