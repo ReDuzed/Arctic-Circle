@@ -140,7 +140,7 @@ namespace ArcticCircle
                             bool on = br.ReadBoolean();
                             WorldGen.ToggleGemLock(posX, posY, on);
                             break;
-                            case PacketTypes.Tile:
+                        case PacketTypes.Tile:
                             byte flag = br.ReadByte();
                             int x = br.ReadInt16();
                             int y = br.ReadInt16();

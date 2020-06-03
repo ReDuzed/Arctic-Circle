@@ -109,7 +109,7 @@ namespace ArcticCircle
             add(new Command("teamset.help", delegate(CommandArgs a)
             {
                 a.Player.SendInfoMessage(string.Format("{0} <index | color>, {1} <name>\n{2}\n{3} automates team group creation parented to group default\n{4} <team color> <group>\n{5} <color | index>\n{6} team spawn switch\n{7} <color> places spawn at your current position\n{8} teleports to team spawn\n{9} switches player on leave being removed from team\n{10} <<1-5>,<1-5>,[<1-5>]...> use 2 or more team indices to autosort into said teams \n{11} <reset | init <#>> Useful for expanding the maximum number of players per team \n{12} <all | team | [username]> Teleport whole everyone, team, or single player to their team spawn \n{13} removes everyone from their teams",
-                                        "/placeteam", "/removeteam", "/reload", "/teamgroups", "/teamset", "/jointeam", "/tspawn", "/settspawn", "/teamspawn", "/teamleavekick", "/autosort", "/database", "/tpteam", "/kickall"));
+                                        "/placeteam", "/removeteam", "/reload", "/teamgroups", "/teamset", "/jointeam", "/tspawn", "/settspawn", "/teamspawn", "/teamleavekick", "/autosort", "/database", "/tpteam", "/resetteams"));
             }, "teamscrip")
             {
                 HelpText = "Toggles whether players can use /tspawn to go to team spawn locations."
@@ -143,13 +143,13 @@ namespace ArcticCircle
             {
                 HelpText = "Flag for automatically assigning members to configured groups upon team join"
             });
-            add(new Command("teamset.admin.kick", DEL.KickAll, "kickall")
+            add(new Command("teamset.admin.kick", DEL.KickAll, "resetteams")
             {
                 HelpText = "Removes all server member's teams"
             });
             add(new Command("teamset.help", delegate(CommandArgs e)
             {
-                var list = PaginationTools.BuildLinesFromTerms(new List<string>() { "placeteam", "removeteam", "reload", "teamgroups", "teamset", "jointeam", "team", "tspawn", "settspawn", "teamspawn", "teamscrip", "teamleavekick", "database", "autosort", "tpteam", "autoassign", "kickall" });
+                var list = PaginationTools.BuildLinesFromTerms(new List<string>() { "placeteam", "removeteam", "reload", "teamgroups", "teamset", "jointeam", "team", "tspawn", "settspawn", "teamspawn", "teamscrip", "teamleavekick", "database", "autosort", "tpteam", "autoassign", "resetteams" });
                 if (e.Message.Contains(" "))
                 {
                     int.TryParse(e.Message.Substring(e.Message.IndexOf(" ") + 1), out int page);
@@ -178,7 +178,8 @@ namespace ArcticCircle
             add(new Command("tile.superadmin.replace", 	
             delegate(CommandArgs e)	
             {	
-                var tiles = copy;	
+                var tiles = copy;
+                int index = 0;	
                 for (int n = 0; n < modifiedTile.Count; n++)	
                 {	
                     TileData[] list = tiles.Where(t => 	
@@ -186,7 +187,7 @@ namespace ArcticCircle
                             t.j == modifiedTile[n].j &&	
                             t.type == modifiedTile[n].type &&	
                             t.active == modifiedTile[n].active).ToArray();	
-
+                    
                     if (list.Length == 0)	
                         continue;	
 
@@ -202,14 +203,26 @@ namespace ArcticCircle
                         WorldGen.SlopeTile(i, j, data.slope);	
 
                         NetMessage.SendData((int)PacketTypes.Tile, 255, -1, null, 1, i, j, data.type);	
-                        NetMessage.SendData((int)PacketTypes.Tile, e.Player.Index, -1, null, 1, i, j, data.type);	
+                        NetMessage.SendData((int)PacketTypes.Tile, e.Player.Index, -1, null, 1, i, j, data.type);
+                        
+                        modifiedTile.RemoveAt(n);
+                        index++;
                     }	
                     else	
                     {	
                         WorldGen.KillTile(i, j, false, false, true);	
                         TShockAPI.TSPlayer.All.SendData(PacketTypes.Tile, "", 0, i, j);	
-                    }	
+                        
+                        modifiedTile.RemoveAt(n);
+                        index++;
+                    }
                 }	
+                if (index > 0)
+                    e.Player.SendSuccessMessage("Replaced " + index + " tiles with their original versions.");
+                else
+                {
+                    e.Player.SendErrorMessage("There are no tiles to replace with their originals.");
+                }
             }, "replaceworld"));	
             add(new Command("tile.superadmin.replace", 	
             delegate(CommandArgs e)	
