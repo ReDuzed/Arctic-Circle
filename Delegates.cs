@@ -899,6 +899,12 @@ namespace ArcticCircle
         }
         public void JoinTeam(CommandArgs e)
         {
+            if (e.Message.StartsWith("team"))	
+            {	
+                Utils.SetTeam(e.Player.Index, Utils.GetPlayerTeam(e.Player.Name));	
+                e.Player.SendErrorMessage("Your previous team designation has been kept. Use [c/FFFF00:/jointeam <color|index>] instead.");	
+                return;	
+            }
             bool success = false;
             for (int i = 0; i < Teams.Length; i++)
             {
