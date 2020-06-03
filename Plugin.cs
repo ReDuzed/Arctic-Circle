@@ -54,6 +54,7 @@ namespace ArcticCircle
             ServerApi.Hooks.GameUpdate.Register(this, Hooks.Instance.ItemClassGameUpdate);
             ServerApi.Hooks.NetGetData.Register(this, Hooks.Instance.OnGetData);
             GetDataHandlers.ItemDrop += Hooks.Instance.OnItemDrop;
+            GetDataHandlers.ChestItemChange += Hooks.Instance.OnChestItemChange;
 
             Utils.SetDefaultStats();
         }
@@ -68,6 +69,7 @@ namespace ArcticCircle
                 ServerApi.Hooks.GameUpdate.Deregister(this, Hooks.Instance.ItemClassGameUpdate);
                 ServerApi.Hooks.NetGetData.Deregister(this, Hooks.Instance.OnGetData);
                 GetDataHandlers.ItemDrop -= Hooks.Instance.OnItemDrop;
+                GetDataHandlers.ChestItemChange -= Hooks.Instance.OnChestItemChange;
             }
         }
     }
