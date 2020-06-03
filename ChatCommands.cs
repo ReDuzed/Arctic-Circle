@@ -7,7 +7,6 @@ using Terraria.ID;
 using Terraria.Localization;
 using TShockAPI;
 using TerrariaApi.Server;
-using OTAPI.Tile;
 using RUDD.Dotnet;
 
 using static ArcticCircle.Hooks;
@@ -22,7 +21,7 @@ namespace ArcticCircle
         }
         public static ChatCommands Instance;
         private bool removeClass, canChoose = true;
-        public List<TileData> copy = new List<TileData>();
+        public List<TileData> copy = new List<TileData>();	
         private bool loaded;
         public void AddCommands()
         {
@@ -30,7 +29,7 @@ namespace ArcticCircle
             void add(Command cmd)
             {
                 Commands.ChatCommands.Add(cmd);
-            };
+            }
             #region Item Classes
             add(new Command("classes.user.choose", DEL.ChooseClass, "chooseclass") { HelpText = "" });
             add(new Command("classes.admin.add", DEL.AddClass, "addclass") { HelpText = "" });
@@ -110,7 +109,7 @@ namespace ArcticCircle
             add(new Command("teamset.help", delegate(CommandArgs a)
             {
                 a.Player.SendInfoMessage(string.Format("{0} <index | color>, {1} <name>\n{2}\n{3} automates team group creation parented to group default\n{4} <team color> <group>\n{5} <color | index>\n{6} team spawn switch\n{7} <color> places spawn at your current position\n{8} teleports to team spawn\n{9} switches player on leave being removed from team\n{10} <<1-5>,<1-5>,[<1-5>]...> use 2 or more team indices to autosort into said teams \n{11} <reset | init <#>> Useful for expanding the maximum number of players per team \n{12} <all | team | [username]> Teleport whole everyone, team, or single player to their team spawn \n{13} removes everyone from their teams",
-                                        "/placeteam", "/removeteam", "/reload", "/teamgroups", "/teamset", "/jointeam", "/tspawn", "/settspawn", "/teamspawn", "/teamleavekick", "/autosort", "/database", "/tpteam", "/resetteams"));
+                                        "/placeteam", "/removeteam", "/reload", "/teamgroups", "/teamset", "/jointeam", "/tspawn", "/settspawn", "/teamspawn", "/teamleavekick", "/autosort", "/database", "/tpteam", "/kickall"));
             }, "teamscrip")
             {
                 HelpText = "Toggles whether players can use /tspawn to go to team spawn locations."
@@ -144,7 +143,7 @@ namespace ArcticCircle
             {
                 HelpText = "Flag for automatically assigning members to configured groups upon team join"
             });
-            add(new Command("teamset.admin.kick", DEL.KickAll, "resetteams")
+            add(new Command("teamset.admin.kick", DEL.KickAll, "kickall")
             {
                 HelpText = "Removes all server member's teams"
             });
@@ -175,66 +174,66 @@ namespace ArcticCircle
             // Safe Regions v2
             add(new Command("saferegion.admin.setup", DEL.Setup, new string[] { "region", "sr", "load" }));
 
-            // Tile manager
-            add(new Command("tile.superadmin.replace", 
-            delegate(CommandArgs e)
-            {
-                var tiles = copy;
-                for (int n = 0; n < modifiedTile.Count; n++)
-                {
-                    TileData[] list = tiles.Where(t => 
-                            t.i == modifiedTile[n].i && 
-                            t.j == modifiedTile[n].j &&
-                            t.type == modifiedTile[n].type &&
-                            t.active == modifiedTile[n].active).ToArray();
+            // Tile manager	
+            add(new Command("tile.superadmin.replace", 	
+            delegate(CommandArgs e)	
+            {	
+                var tiles = copy;	
+                for (int n = 0; n < modifiedTile.Count; n++)	
+                {	
+                    TileData[] list = tiles.Where(t => 	
+                            t.i == modifiedTile[n].i && 	
+                            t.j == modifiedTile[n].j &&	
+                            t.type == modifiedTile[n].type &&	
+                            t.active == modifiedTile[n].active).ToArray();	
 
-                    if (list.Length == 0)
-                        continue;
+                    if (list.Length == 0)	
+                        continue;	
 
-                    TileData data = list[0];
-                    int i = data.i;
-                    int j = data.j;
+                    TileData data = list[0];	
+                    int i = data.i;	
+                    int j = data.j;	
 
-                    //if (Main.tile[i, j].type == 0)
-                    //    continue;
-                    if (data.active)
-                    {
-                        WorldGen.PlaceTile(i, j, data.type, true, true);
-                        WorldGen.SlopeTile(i, j, data.slope);
-                        
-                        NetMessage.SendData((int)PacketTypes.Tile, 255, -1, null, 1, i, j, data.type);
-                        NetMessage.SendData((int)PacketTypes.Tile, e.Player.Index, -1, null, 1, i, j, data.type);
-                    }
-                    else
-                    {
-                        WorldGen.KillTile(i, j, false, false, true);
-                        TShockAPI.TSPlayer.All.SendData(PacketTypes.Tile, "", 0, i, j);
-                    }
-                }
-            }, "replaceworld"));
-            add(new Command("tile.superadmin.replace", 
-            delegate(CommandArgs e)
-            {
-                if (!loaded)
-                {
-                    for (int i = 0; i < Main.maxTilesX; i++)
-                    {
-                        for (int j = 0; j < Main.maxTilesY; j++)
-                        copy.Add(new TileData(){
-                            i = i,
-                            j = j,
-                            type = Main.tile[i, j].type,
-                            slope = Main.tile[i, j].slope(),
-                            active = Main.tile[i, j].active()
-                        });
-                    }
-                    loaded = true;
-                    e.Player.SendSuccessMessage("World tiles have been loaded into memory.");
-                }
-                else
-                {
-                    e.Player.SendErrorMessage("The world tiles have already been loaded into memory.");
-                }
+                    //if (Main.tile[i, j].type == 0)	
+                    //    continue;	
+                    if (data.active)	
+                    {	
+                        WorldGen.PlaceTile(i, j, data.type, true, true);	
+                        WorldGen.SlopeTile(i, j, data.slope);	
+
+                        NetMessage.SendData((int)PacketTypes.Tile, 255, -1, null, 1, i, j, data.type);	
+                        NetMessage.SendData((int)PacketTypes.Tile, e.Player.Index, -1, null, 1, i, j, data.type);	
+                    }	
+                    else	
+                    {	
+                        WorldGen.KillTile(i, j, false, false, true);	
+                        TShockAPI.TSPlayer.All.SendData(PacketTypes.Tile, "", 0, i, j);	
+                    }	
+                }	
+            }, "replaceworld"));	
+            add(new Command("tile.superadmin.replace", 	
+            delegate(CommandArgs e)	
+            {	
+                if (!loaded)	
+                {	
+                    for (int i = 0; i < Main.maxTilesX; i++)	
+                    {	
+                        for (int j = 0; j < Main.maxTilesY; j++)	
+                        copy.Add(new TileData(){	
+                            i = i,	
+                            j = j,	
+                            type = Main.tile[i, j].type,	
+                            slope = Main.tile[i, j].slope(),	
+                            active = Main.tile[i, j].active()	
+                        });	
+                    }	
+                    loaded = true;	
+                    e.Player.SendSuccessMessage("World tiles have been loaded into memory.");	
+                }	
+                else	
+                {	
+                    e.Player.SendErrorMessage("The world tiles have already been loaded into memory.");	
+                }	
             }, "loadworld"));
         }
     }
