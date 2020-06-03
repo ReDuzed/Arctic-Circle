@@ -38,7 +38,7 @@ namespace ArcticCircle
         }
         public string[] itemSet = new string[4];
         public int total;
-        public static string[] informal
+        public static string[] Informal
         {
             get { return new string[] { "none", "red", "green", "blue", "yellow", "pink" }; }
         }
@@ -77,7 +77,6 @@ namespace ArcticCircle
 
             if (e.Message.Contains(" "))
             {
-                string userName = e.TPlayer.name;
                 string param = e.Message.Substring(e.Message.IndexOf(" ") + 1).ToLower().Trim(' ');
                 if (/*Plugin.Instance.teamData.GetBlock(userName).GetValue("class") != "0"*/ hasChosenClass[e.Player.Index] && !canBypass)
                 {
@@ -104,7 +103,6 @@ namespace ArcticCircle
                         string[] array = itemSet[index].Trim(' ').Split(',');
                         for (int j = 0; j < array.Length; j++)
                         {
-                            int type;
                             #region Works | good formatting
                             /*
                             for (int n = 0; n < array[j].Length; n++)
@@ -128,18 +126,17 @@ namespace ArcticCircle
                             e.Player.GiveItem(type, 1);*/
                             #endregion
                             #region Tried & works | bad formatting
-                            if (int.TryParse(array[j], out type))
+                            if (int.TryParse(array[j], out int type))
                             {
                                 var data = Plugin.Instance.item_data;
                                 var list = TShock.Utils.GetItemByIdOrName(type.ToString());
-                                Item item = null;
-                                Block block = new Block() 
+                                Block block = new Block()
                                 {
                                     active = false
                                 };
                                 if (list.Count > 0)
                                 {
-                                    item = list[0];
+                                    Item item = list[0];
                                     if (data.BlockExists(item.Name))
                                     {
                                         block = data.GetBlock(item.Name);
@@ -188,7 +185,7 @@ namespace ArcticCircle
                                             continue;
                                         }
                                         else
-                                        {   
+                                        {
                                             if (block.active)
                                             {
                                                 ItemGet(new CommandArgs("giveitem", e.Player, new List<string>() { type.ToString(), 1.ToString(), 0.ToString() }));
@@ -301,7 +298,7 @@ namespace ArcticCircle
  
             Ini ini = new Ini()
             {
-                setting = new string[] { "playersperteam", "kickonswitch", "teamfreejoin", "kickonleave", "enableteamspawn", "teamoverflow", "autogroupassign", informal[0], informal[1], informal[2], informal[3], informal[4], informal[5] },
+                setting = new string[] { "playersperteam", "kickonswitch", "teamfreejoin", "kickonleave", "enableteamspawn", "teamoverflow", "autogroupassign", Informal[0], Informal[1], Informal[2], Informal[3], Informal[4], Informal[5] },
                 path = "config\\team_data" + Ini.ext
             };
             total = 0;
@@ -345,35 +342,27 @@ namespace ArcticCircle
             bool.TryParse(tspawn, out teamSpawn);
             bool.TryParse(overf, out overflow);
             bool.TryParse(auto, out autoAssignGroup);
-           
-            int noneX, noneY;
-            int redX, redY;
-            int greenX, greenY;
-            int blueX, blueY;
-            int yellowX, yellowY;
-            int pinkX, pinkY;
-            int.TryParse(none.Split(':')[0], out noneX);
-            int.TryParse(none.Split(':')[1], out noneY);
-            int.TryParse(red.Split(':')[0], out redX);
-            int.TryParse(red.Split(':')[1], out redY);
-            int.TryParse(green.Split(':')[0], out greenX);
-            int.TryParse(green.Split(':')[1], out greenY);
-            int.TryParse(blue.Split(':')[0], out blueX);
-            int.TryParse(blue.Split(':')[1], out blueY);
-            int.TryParse(yellow.Split(':')[0], out yellowX);
-            int.TryParse(yellow.Split(':')[1], out yellowY);
-            int.TryParse(pink.Split(':')[0], out pinkX);
-            int.TryParse(pink.Split(':')[1], out pinkY);
+
+            int.TryParse(none.Split(':')[0], out int noneX);
+            int.TryParse(none.Split(':')[1], out int noneY);
+            int.TryParse(red.Split(':')[0], out int redX);
+            int.TryParse(red.Split(':')[1], out int redY);
+            int.TryParse(green.Split(':')[0], out int greenX);
+            int.TryParse(green.Split(':')[1], out int greenY);
+            int.TryParse(blue.Split(':')[0], out int blueX);
+            int.TryParse(blue.Split(':')[1], out int blueY);
+            int.TryParse(yellow.Split(':')[0], out int yellowX);
+            int.TryParse(yellow.Split(':')[1], out int yellowY);
+            int.TryParse(pink.Split(':')[0], out int pinkX);
+            int.TryParse(pink.Split(':')[1], out int pinkY);
             teamSpawns[0] = new Vector2(noneX, noneY);
             teamSpawns[1] = new Vector2(redX, redY);
             teamSpawns[2] = new Vector2(greenX, greenY);
             teamSpawns[3] = new Vector2(blueX, blueY);
             teamSpawns[4] = new Vector2(yellowX, yellowY);
             teamSpawns[5] = new Vector2(pinkX, pinkY);
-
-            string[] Slots = new string[] {};
             total = Math.Max(total, 2);
-            Slots = new string[total];
+            string[] Slots = new string[total];
             for (int i = 0; i < total; i++)
                 Slots[i] = "players" + (i + 1);
             
@@ -394,7 +383,7 @@ namespace ArcticCircle
                     }
                 }
             }
-            string[] keys = informal;
+            string[] keys = Informal;
             if (!Plugin.Instance.teamData.BlockExists("groups"))
             {
                 setting = Plugin.Instance.teamData.NewBlock(keys, "groups");
@@ -453,10 +442,10 @@ namespace ArcticCircle
 
         public void Start(CommandArgs e)
         {
-            Action error = delegate()
+            void error()
             {
                 e.Player.SendErrorMessage("Try using [c/FFFF00:/match class <# of seconds>] to set a countdown for players to choose a class.");
-            };
+            }
             if (e.Message.Contains(" "))
             {
                 string sub = e.Message.Substring(e.Message.IndexOf(" ") + 1);
@@ -622,7 +611,7 @@ namespace ArcticCircle
                     if (player != null && index != 0)
                     {
                         num[index]++;
-                        JoinTeam(new CommandArgs("jointeam " + informal[index], player, null));
+                        JoinTeam(new CommandArgs("jointeam " + Informal[index], player, null));
                         e.Player.SendInfoMessage(player.Name + " sent to " + Teams[index]);
                     }
                 }
@@ -643,20 +632,19 @@ namespace ArcticCircle
                 if (sub.StartsWith("init"))
                 {
                     string[] Slots = new string[] {};
-                    Action<int> num = delegate(int count)
+                    void num(int count)
                     {
                         total = Math.Max(count, 2);
                         Slots = new string[total];
                         for (int i = 0; i < total; i++)
                             Slots[i] = "players" + (i + 1);
                         e.Player.SendSuccessMessage("Max spots per team has been set to: [c/FFFF00: " + total + "].");
-                    };
-                    int t;
+                    }
                     if (!sub.Contains(" "))
                     {
                         num(total);
                     }
-                    else if (int.TryParse(sub.Substring(sub.IndexOf(" ") + 1), out t))
+                    else if (int.TryParse(sub.Substring(sub.IndexOf(" ") + 1), out int t))
                     {
                         num(t);
                     }
@@ -682,7 +670,7 @@ namespace ArcticCircle
                             }
                         }
                     }
-                    string[] keys = informal;
+                    string[] keys = Informal;
                     if (!Plugin.Instance.teamData.BlockExists("groups"))
                     {
                         setting = Plugin.Instance.teamData.NewBlock(keys, "groups");
@@ -726,14 +714,14 @@ namespace ArcticCircle
             if (e.Message.Contains(" "))
             {
                 string team = e.Message.Substring(e.Message.IndexOf(" ") + 1).ToLower();
-                for (int i = 0; i < informal.Length; i++)
+                for (int i = 0; i < Informal.Length; i++)
                 {
-                    if (informal[i] == team)
+                    if (Informal[i] == team)
                     {
                         spawn.WriteValue(team, string.Concat(v2.X, "x", v2.Y));
                         break;
                     }
-                    if (i == informal.Length - 1)
+                    if (i == Informal.Length - 1)
                     {
                         e.Player.SendErrorMessage(string.Concat(team, " is not an existing team. Only the name of the color of the team is required."));
                         return;
@@ -781,13 +769,13 @@ namespace ArcticCircle
                     e.Player.SendInfoMessage("/teamset [team color] [group name]");
                 }
                 for (int i = 1; i < Groups.Length; i++)
-                    setting.WriteValue(informal[i], Groups[i]);
+                    setting.WriteValue(Informal[i], Groups[i]);
                 return;
             }
             var manage = TShock.Groups;
             if (manage.GroupExists("default"))
             {
-                manage.GetGroupByName("default").SetPermission(new System.Collections.Generic.List<string>() { "teamset.join" });
+                manage.GetGroupByName("default").SetPermission(new List<string>() { "teamset.join" });
                 manage.GetGroupByName("default").ChatColor = "200,200,200";
                 manage.GetGroupByName("default").Prefix = "[i:1] ";
             }
@@ -833,7 +821,7 @@ namespace ArcticCircle
         }
         public void PlaceTeam(CommandArgs e)
         {
-            string cmd = string.Empty;
+            string cmd;
             if (e.Message.ToLower().Contains("placeteam"))
             {
                 if ((cmd = e.Message.ToLower()).Length > 9 && e.Message.Contains(" "))
@@ -854,7 +842,7 @@ namespace ArcticCircle
                                     int t = Utils.GetTeamIndex(team);
                                     if (t > 0 || int.TryParse(team, out t))
                                     {
-                                        int get = 0;
+                                        int get;
                                         if ((get = Utils.GetPlayerTeam(name)) == 0)
                                         {
                                             if (Utils.SetPlayerTeam(name, t))
@@ -887,7 +875,7 @@ namespace ArcticCircle
             {
                 if ((cmd = e.Message).Length > 10 && e.Message.Contains(" "))
                 {
-                    string name = string.Empty;
+                    string name;
                     if (Utils.RemoveFromTeam(name = cmd.Substring(cmd.IndexOf(" ") + 1)))
                     {
                         e.Player.SendSuccessMessage(string.Concat(name, " has been removed from their team."));
@@ -911,20 +899,12 @@ namespace ArcticCircle
         }
         public void JoinTeam(CommandArgs e)
         {
-            if (e.Message.StartsWith("team"))
-            {
-                Utils.SetTeam(e.Player.Index, Utils.GetPlayerTeam(e.Player.Name));
-                e.Player.SendErrorMessage("Your previous team designation has been kept. Use [c/FFFF00:/jointeam <color|index>] instead.");
-                return;
-            }
-            string cmd = string.Empty;
-            int index = 0;
             bool success = false;
             for (int i = 0; i < Teams.Length; i++)
             {
                 string t = Teams[i];
-                cmd = e.Message.Substring(e.Message.IndexOf(" ") + 1);
-                int.TryParse(cmd, out index);
+                string cmd = e.Message.Substring(e.Message.IndexOf(" ") + 1);
+                int.TryParse(cmd, out int index);
                 if (Utils.GetPlayerTeam(e.Player.Name) == 0 || freeJoin)
                 {
                     if (t.ToLower().Contains(cmd.ToLower()))
@@ -1101,8 +1081,7 @@ namespace ArcticCircle
             }
             else
             {
-                int stack = 0;
-                if (!int.TryParse(param[1], out stack))
+                if (!int.TryParse(param[1], out int stack))
                     stack = 1;
 
                 block = data.GetBlock(getItem.Name);
