@@ -2,12 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using OTAPI.Tile;
 using Terraria;
 using Terraria.ID;
 using Terraria.Localization;
 using TShockAPI;
 using TShockAPI.DB;
-using OTAPI.Tile;
 using TerrariaApi.Server;
 using RUDD.Dotnet;
 using static TShockAPI.GetDataHandlers;
@@ -140,7 +140,7 @@ namespace ArcticCircle
                             bool on = br.ReadBoolean();
                             WorldGen.ToggleGemLock(posX, posY, on);
                             break;
-                        case PacketTypes.Tile:
+                            case PacketTypes.Tile:
                             byte flag = br.ReadByte();
                             int x = br.ReadInt16();
                             int y = br.ReadInt16();
@@ -210,10 +210,6 @@ namespace ArcticCircle
 
                 TSPlayer.All.SendData(PacketTypes.TweakItem, "", index, 255, 63);
             }
-        }
-
-        public void OnTileEdit(object sender, TileEditEventArgs e)
-        {
         }
     }
 }
