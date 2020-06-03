@@ -55,6 +55,7 @@ namespace ArcticCircle
             ServerApi.Hooks.NetGetData.Register(this, Hooks.Instance.OnGetData);
             // Commented out as this packet causes an unresolved loop of generating the same items upon class designation.
             GetDataHandlers.ItemDrop += Hooks.Instance.OnItemDrop;
+            //GetDataHandlers.TileEdit += Hooks...
 
             Utils.SetDefaultStats();
         }

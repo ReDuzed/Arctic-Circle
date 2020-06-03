@@ -302,12 +302,13 @@ namespace ArcticCircle
         public const string Empty = "0";
         public static void TeamTeleport(string name, int whoAmI)
         {
-            string team = Delegates.Informal[GetPlayerTeam(name)];
+            string team = Delegates.informal[GetPlayerTeam(name)];
             string[] s = Delegates.Instance.spawn.GetValue(team).Split('x');
             string sX = s[0];
             string sY = s[1];
-            float.TryParse(sX, out float x);
-            float.TryParse(sY, out float y);
+            float x, y;
+            float.TryParse(sX, out x);
+            float.TryParse(sY, out y);
             TShock.Players[whoAmI].Teleport(x, y);
             TShock.Players[whoAmI].SendSuccessMessage(string.Format("You have been sent to {0}'s spawn at {1}:{2}.", team, x, y));
         }

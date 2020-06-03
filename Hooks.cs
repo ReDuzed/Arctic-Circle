@@ -7,6 +7,7 @@ using Terraria.ID;
 using Terraria.Localization;
 using TShockAPI;
 using TShockAPI.DB;
+using OTAPI.Tile;
 using TerrariaApi.Server;
 using RUDD.Dotnet;
 using static TShockAPI.GetDataHandlers;
@@ -26,6 +27,17 @@ namespace ArcticCircle
         public static int ticks;
         public static bool preMatchChoose;
         public bool[] hasChosenClass = new bool[256];
+        public class TileData
+        {
+            public int i, j;
+            public int type;
+            public byte slope;
+            public short frameX;
+            public short frameY; 
+            public ITile tile;
+            public bool active;
+        }
+        public static List<TileData> modifiedTile = new List<TileData>();
         public void ItemClassGameUpdate(EventArgs e)
         {
             //  Item Classes
@@ -128,6 +140,25 @@ namespace ArcticCircle
                             bool on = br.ReadBoolean();
                             WorldGen.ToggleGemLock(posX, posY, on);
                             break;
+                        case PacketTypes.Tile:
+                            byte flag = br.ReadByte();
+                            int x = br.ReadInt16();
+                            int y = br.ReadInt16();
+                            //byte dmg = br.ReadByte();
+                            
+                            if (modifiedTile.Where(t => t.i == x && t.j == y).ToArray().Length != 0)
+                                return;
+                            
+                            ITile tile = Main.tile[x, y];
+                            modifiedTile.Add(new TileData()
+                            {
+                                i = x,
+                                j = y,
+                                type = tile.type,
+                                slope = tile.slope(),
+                                active = tile.active()
+                            });
+                            break;
                     }
                 }
             }
@@ -179,6 +210,10 @@ namespace ArcticCircle
 
                 TSPlayer.All.SendData(PacketTypes.TweakItem, "", index, 255, 63);
             }
+        }
+
+        public void OnTileEdit(object sender, TileEditEventArgs e)
+        {
         }
     }
 }

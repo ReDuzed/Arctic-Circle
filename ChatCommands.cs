@@ -7,7 +7,10 @@ using Terraria.ID;
 using Terraria.Localization;
 using TShockAPI;
 using TerrariaApi.Server;
+using OTAPI.Tile;
 using RUDD.Dotnet;
+
+using static ArcticCircle.Hooks;
 
 namespace ArcticCircle
 {
@@ -19,10 +22,12 @@ namespace ArcticCircle
         }
         public static ChatCommands Instance;
         private bool removeClass, canChoose = true;
+        public List<TileData> copy = new List<TileData>();
+        private bool loaded;
         public void AddCommands()
         {
             var DEL = Delegates.Instance;
-            Action<Command> add = delegate(Command cmd)
+            void add(Command cmd)
             {
                 Commands.ChatCommands.Add(cmd);
             };
@@ -169,6 +174,68 @@ namespace ArcticCircle
 
             // Safe Regions v2
             add(new Command("saferegion.admin.setup", DEL.Setup, new string[] { "region", "sr", "load" }));
+
+            // Tile manager
+            add(new Command("tile.superadmin.replace", 
+            delegate(CommandArgs e)
+            {
+                var tiles = copy;
+                for (int n = 0; n < modifiedTile.Count; n++)
+                {
+                    TileData[] list = tiles.Where(t => 
+                            t.i == modifiedTile[n].i && 
+                            t.j == modifiedTile[n].j &&
+                            t.type == modifiedTile[n].type &&
+                            t.active == modifiedTile[n].active).ToArray();
+
+                    if (list.Length == 0)
+                        continue;
+
+                    TileData data = list[0];
+                    int i = data.i;
+                    int j = data.j;
+
+                    //if (Main.tile[i, j].type == 0)
+                    //    continue;
+                    if (data.active)
+                    {
+                        WorldGen.PlaceTile(i, j, data.type, true, true);
+                        WorldGen.SlopeTile(i, j, data.slope);
+                        
+                        NetMessage.SendData((int)PacketTypes.Tile, 255, -1, null, 1, i, j, data.type);
+                        NetMessage.SendData((int)PacketTypes.Tile, e.Player.Index, -1, null, 1, i, j, data.type);
+                    }
+                    else
+                    {
+                        WorldGen.KillTile(i, j, false, false, true);
+                        TShockAPI.TSPlayer.All.SendData(PacketTypes.Tile, "", 0, i, j);
+                    }
+                }
+            }, "replaceworld"));
+            add(new Command("tile.superadmin.replace", 
+            delegate(CommandArgs e)
+            {
+                if (!loaded)
+                {
+                    for (int i = 0; i < Main.maxTilesX; i++)
+                    {
+                        for (int j = 0; j < Main.maxTilesY; j++)
+                        copy.Add(new TileData(){
+                            i = i,
+                            j = j,
+                            type = Main.tile[i, j].type,
+                            slope = Main.tile[i, j].slope(),
+                            active = Main.tile[i, j].active()
+                        });
+                    }
+                    loaded = true;
+                    e.Player.SendSuccessMessage("World tiles have been loaded into memory.");
+                }
+                else
+                {
+                    e.Player.SendErrorMessage("The world tiles have already been loaded into memory.");
+                }
+            }, "loadworld"));
         }
     }
 }
