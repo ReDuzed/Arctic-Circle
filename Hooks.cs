@@ -14,6 +14,7 @@ using static TShockAPI.GetDataHandlers;
 
 using ArcticCircle;
 using static ArcticCircle.Utils;
+using Microsoft.Xna.Framework;
 
 namespace ArcticCircle
 {
@@ -124,21 +125,21 @@ namespace ArcticCircle
                     {
                         case PacketTypes.PlayerTeam:
                             //  Team set
-                            byte who = br.ReadByte();
+                            byte teamWho = br.ReadByte();
                             byte team = br.ReadByte();
-                            int check = Utils.GetPlayerTeam(Main.player[who].name);
-                            Utils.SetTeam(who, check);
-                            if (Delegates.Instance.kickOnSwitch && team != check && team != 0)
+                            int teamCheck = GetPlayerTeam(Main.player[teamWho].name);
+                            Utils.SetTeam(teamWho, teamCheck);
+                            if (Delegates.Instance.kickOnSwitch && team != teamCheck && team != 0)
                             {
-                                TShock.Players[who].Disconnect("Kicked for switching teams.");
+                                TShock.Players[teamWho].Disconnect("Kicked for switching teams.");
                             }
                             break;
                         case PacketTypes.GemLockToggle:
                             e.Handled = true;
-                            int posX = br.ReadInt16();
-                            int posY = br.ReadInt16();
-                            bool on = br.ReadBoolean();
-                            WorldGen.ToggleGemLock(posX, posY, on);
+                            int lockPosX = br.ReadInt16();
+                            int lockPosY = br.ReadInt16();
+                            bool lockOn = br.ReadBoolean();
+                            WorldGen.ToggleGemLock(lockPosX, lockPosY, lockOn);
                             break;
                         case PacketTypes.Tile:
                             byte flag = br.ReadByte();
@@ -164,28 +165,62 @@ namespace ArcticCircle
             }
         }
 
+        // TODO: Fix issue where the player can dodge the falling item by dashing or moving fast using wings.
+
         public void OnItemDrop(object sender, ItemDropEventArgs e)
         {
-            // TODO: Fix issue where the player can dodge the falling item by dashing or moving fast using wings.
-
             // Check if the player is picking up an item (E.g. from /chooseclass).
-            if (e.ID < 400)
+            if (e.ID != 400)
             {
                 return;
             }
 
             e.Handled = true;
 
-            TSPlayer tsPlayer = e.Player;
-            Player player = tsPlayer.TPlayer;
-            
-            // TODO: Being given a large number of items causes the drops to duplicate in a loop after the packets resend upon receiving the same set of items.
-            //if (hasChosenClass[tsPlayer.Index])
-            //    return;
+            TSPlayer tSPlayer = e.Player;
+            Player player = tSPlayer.TPlayer;
             
             string itemName = TShock.Utils.GetItemById(e.Type).Name;
 
-            int index = Item.NewItem(player.position, new Microsoft.Xna.Framework.Vector2(32, 48), e.Type, e.Stacks);
+            int index = Item.NewItem(player.position, new Vector2(32, 48), e.Type, e.Stacks);
+            Item item = Main.item[index];
+
+            var data = Plugin.Instance.item_data;
+            if (data.BlockExists(itemName))
+            {
+                Block block = data.GetBlock(itemName);
+
+                int.TryParse(block.GetValue(Parameters[Damage].TrimEnd(':', '0')), out item.damage);
+                int.TryParse(block.GetValue(Parameters[Crit].TrimEnd(':', '0')), out item.crit);
+                float.TryParse(block.GetValue(Parameters[KB].TrimEnd(':', '0')), out item.knockBack);
+                byte.TryParse(block.GetValue(Parameters[Prefix].TrimEnd(':', '0')), out item.prefix);
+                int.TryParse(block.GetValue(Parameters[ReuseDelay].TrimEnd(':', '0')), out item.reuseDelay);
+                int.TryParse(block.GetValue(Parameters[Shoot].TrimEnd(':', '0')), out item.shoot);
+                float.TryParse(block.GetValue(Parameters[ShootSpeed].TrimEnd(':', '0')), out item.shootSpeed);
+                int.TryParse(block.GetValue(Parameters[UseAmmo].TrimEnd(':', '0')), out item.useAmmo);
+                int.TryParse(block.GetValue(Parameters[UseTime].TrimEnd(':', '0')), out item.useTime);
+                int.TryParse(block.GetValue(Parameters[Width].TrimEnd(':', '0')), out item.width);
+                int.TryParse(block.GetValue(Parameters[Height].TrimEnd(':', '0')), out item.height);
+                bool.TryParse(block.GetValue(Parameters[AutoReuse].TrimEnd(':', '0')), out item.autoReuse);
+                int.TryParse(block.GetValue(Parameters[Ammo].TrimEnd(':', '0')), out item.ammo);
+                float.TryParse(block.GetValue(Parameters[Scale].TrimEnd(':', '0')), out item.scale);
+
+                TSPlayer.All.SendData(PacketTypes.TweakItem, "", index, 255, 63);
+            }
+        }
+
+        public void OnChestItemChange(object sender, ChestItemEventArgs e)
+        {
+            TSPlayer tSPlayer = e.Player;
+            Player player = tSPlayer.TPlayer;
+
+            e.Handled = true;
+            Main.chest[e.ID].item[e.Slot] = new Item();
+            tSPlayer.SendData(PacketTypes.ChestItem, "", e.ID, e.Slot, e.Stacks, e.Prefix, e.Type);
+
+            string itemName = TShock.Utils.GetItemById(e.Type).Name;
+
+            int index = Item.NewItem(player.position, new Vector2(32, 48), e.Type, e.Stacks);
             Item item = Main.item[index];
 
             var data = Plugin.Instance.item_data;
