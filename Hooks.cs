@@ -8,6 +8,7 @@ using Terraria.ID;
 using Terraria.Localization;
 using TShockAPI;
 using TShockAPI.DB;
+using TShockAPI.Net;
 using TerrariaApi.Server;
 using RUDD.Dotnet;
 using static TShockAPI.GetDataHandlers;
@@ -28,15 +29,18 @@ namespace ArcticCircle
         public static int ticks;
         public static bool preMatchChoose;
         public bool[] hasChosenClass = new bool[256];
+        public readonly List<string> str = new List<string>();
         public class TileData
         {
             public int i, j;
-            public int type;
+            public ushort type;
             public byte slope;
             public short frameX;
             public short frameY; 
             public ITile tile;
             public bool active;
+            public bool halfBrick;
+            public ushort wall;
         }
         public static List<TileData> modifiedTile = new List<TileData>();
         public void ItemClassGameUpdate(EventArgs e)
@@ -119,7 +123,8 @@ namespace ArcticCircle
         {
             if (!e.Handled)
             {
-                using (BinaryReader br = new BinaryReader(new MemoryStream(e.Msg.readBuffer, e.Index, e.Length)))
+                MemoryStream stream;
+                using (BinaryReader br = new BinaryReader(stream = new MemoryStream(e.Msg.readBuffer, e.Index, e.Length)))
                 {
                     switch (e.MsgID)
                     {
@@ -141,28 +146,64 @@ namespace ArcticCircle
                             bool lockOn = br.ReadBoolean();
                             WorldGen.ToggleGemLock(lockPosX, lockPosY, lockOn);
                             break;
+                        case PacketTypes.TileSendSection:
+                            ushort size = br.ReadUInt16();
+                            byte changeType = br.ReadByte();
+                            /*
+                            int i = br.ReadInt16();
+                            int j = br.ReadInt16();
+                            for (int k = i; k < i + size; k++)
+                            {
+                                for (int l = j; l < j + size; l++)
+                                {
+                                    CheckModifiedTiles(k, l, stream);
+                                }
+                            }*/
+                            break;
                         case PacketTypes.Tile:
+                            if (!ChatCommands.loaded)
+                                return;
                             byte flag = br.ReadByte();
                             int x = br.ReadInt16();
                             int y = br.ReadInt16();
                             //byte dmg = br.ReadByte();
-                            
-                            if (modifiedTile.Where(t => t.i == x && t.j == y).ToArray().Length != 0)
-                                return;
-                            
-                            ITile tile = Main.tile[x, y];
-                            modifiedTile.Add(new TileData()
-                            {
-                                i = x,
-                                j = y,
-                                type = tile.type,
-                                slope = tile.slope(),
-                                active = tile.active()
-                            });
+                            CheckModifiedTiles(x, y, stream);
                             break;
                     }
                 }
             }
+        }
+        public static void CheckModifiedTiles(int i, int j, Stream stream)
+        {
+            if (modifiedTile.Where(t => t.i == i && t.j == j).ToArray().Length != 0)
+                return;
+
+            ITile tile = Main.tile[i, j];
+            stream.Seek(0, SeekOrigin.Begin);
+            var newTile = new NetTile(stream);
+            byte Slope = 0;
+            if (newTile.Slope)
+            {
+                Slope += 1;
+            }
+            if (newTile.Slope2)
+            {
+                Slope += 2;
+            }
+            if (newTile.Slope3)
+            {
+                Slope += 4;
+            }
+            modifiedTile.Add(new TileData()
+            {
+                i = i,
+                j = j,
+                type = tile.type,
+                slope = Slope,
+                active = tile.active(),
+                halfBrick = newTile.IsHalf,
+                wall = tile.wall
+            });
         }
 
         // TODO: Fix issue where the player can dodge the falling item by dashing or moving fast using wings.

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using OTAPI.Tile;
 using Terraria;
 using Terraria.ID;
 using Terraria.Localization;
@@ -22,7 +23,7 @@ namespace ArcticCircle
         public static ChatCommands Instance;
         private bool removeClass, canChoose = true;
         public List<TileData> copy = new List<TileData>();	
-        private bool loaded;
+        public static bool loaded;
         public void AddCommands()
         {
             var DEL = Delegates.Instance;
@@ -83,7 +84,7 @@ namespace ArcticCircle
             {
                 HelpText = "Modifies the associated group for the specified team color."
             });
-            add(new Command("teamset.join", DEL.JoinTeam, new string[] { "jointeam", "team" })
+            add(new Command("teamset.join", DEL.JoinTeam, new string[] { "jointeam", "team" }) // "team" command only used to deny the PvPToggle plugin command /team.
             {
                 HelpText = "Allows players to join a team if they aren't on one already.",
                 AllowServer = false
@@ -194,31 +195,41 @@ namespace ArcticCircle
                     TileData data = list[0];	
                     int i = data.i;	
                     int j = data.j;	
-
-                    //if (Main.tile[i, j].type == 0)	
-                    //    continue;	
+                    
                     if (data.active)	
-                    {	
-                        WorldGen.PlaceTile(i, j, data.type, true, true);	
-                        WorldGen.SlopeTile(i, j, data.slope);	
-
-                        NetMessage.SendData((int)PacketTypes.Tile, 255, -1, null, 1, i, j, data.type);	
-                        NetMessage.SendData((int)PacketTypes.Tile, e.Player.Index, -1, null, 1, i, j, data.type);
-                        
-                        modifiedTile.RemoveAt(n);
+                    {
+                        WorldGen.PlaceTile(i, j, data.type, true, true);
+                        if (data.wall != 0)
+                            WorldGen.PlaceWall(i, j, data.wall, true);
+                            
+                        ITile tile = Main.tile[i, j];
+                        tile.type = data.type;
+                        if (data.halfBrick)
+                        {
+                            tile.halfBrick(data.halfBrick);
+                        }
+                        else tile.slope(data.slope);
+                        //  TODO: sort out slopes after replacing the tiles. This is returning a System.IndexOutOfRangeException.
+                        int x = Netplay.GetSectionX(i);
+                        int y = Netplay.GetSectionY(j);
+                        foreach (RemoteClient sock in Netplay.Clients.Where(t => t.IsActive))
+                        {
+                            sock.TileSections[x, y] = false;
+                        }
                         index++;
                     }	
                     else	
                     {	
                         WorldGen.KillTile(i, j, false, false, true);	
-                        TShockAPI.TSPlayer.All.SendData(PacketTypes.Tile, "", 0, i, j);	
-                        
-                        modifiedTile.RemoveAt(n);
+                        TShockAPI.TSPlayer.All.SendData(PacketTypes.Tile, "", 0, i, j);	                        
                         index++;
                     }
                 }	
                 if (index > 0)
+                {
+                    modifiedTile.Clear();
                     e.Player.SendSuccessMessage("Replaced " + index + " tiles with their original versions.");
+                }
                 else
                 {
                     e.Player.SendErrorMessage("There are no tiles to replace with their originals.");
@@ -237,7 +248,9 @@ namespace ArcticCircle
                             j = j,	
                             type = Main.tile[i, j].type,	
                             slope = Main.tile[i, j].slope(),	
-                            active = Main.tile[i, j].active()	
+                            active = Main.tile[i, j].active(),
+                            halfBrick = Main.tile[i, j].halfBrick(),
+                            wall = Main.tile[i, j].wall
                         });	
                     }	
                     loaded = true;	

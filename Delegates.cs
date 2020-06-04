@@ -206,6 +206,7 @@ namespace ArcticCircle
                     }
                 }
                 hasChosenClass[e.Player.Index] = true;
+                e.Player.SetBuff(BuffID.Webbed, 60, true);
                 e.Player.SendSuccessMessage(Utils.ClassID.Array[Utils.ClassSet(param)] + " class chosen!");
                 return;
             }
@@ -1055,7 +1056,7 @@ namespace ArcticCircle
 
             if (param.Count == 0 || param.Count < 3)
             {
-                e.Player.SendErrorMessage("Not enough information. Use [c/FFFF00:/giveitem <iten name | ID> <stack #> <prefix #>].");
+                e.Player.SendErrorMessage("Not enough information. Use [c/FFFF00:/giveitem <item name | ID> <stack #> <prefix #>].");
                 return;
             }
 
