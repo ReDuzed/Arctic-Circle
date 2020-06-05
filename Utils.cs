@@ -500,5 +500,28 @@ namespace ArcticCircle
             }
         }
         #endregion
+
+        // World replacement
+        public static void ReplaceTiles(int i, int j, Hooks.TileData data, int style = 0)
+        {
+            WorldGen.PlaceTile(i, j, data.type, true, true, -1, style);
+            if (data.wall != 0)
+                WorldGen.PlaceWall(i, j, data.wall, true);
+                
+            OTAPI.Tile.ITile tile = Main.tile[i, j];
+            tile.type = data.type;
+            if (data.halfBrick)
+            {
+                tile.halfBrick(data.halfBrick);
+            }
+            else tile.slope(data.slope);
+            //  TODO: sort out slopes after replacing the tiles. This is returning a System.IndexOutOfRangeException.
+            int x = Netplay.GetSectionX(i);
+            int y = Netplay.GetSectionY(j);
+            foreach (RemoteClient sock in Netplay.Clients.Where(t => t.IsActive))
+            {
+                sock.TileSections[x, y] = false;
+            }
+        }
     }   
 }

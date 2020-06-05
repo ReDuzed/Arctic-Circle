@@ -180,7 +180,18 @@ namespace ArcticCircle
             delegate(CommandArgs e)	
             {	
                 var tiles = copy;
-                int index = 0;	
+                int index = 0;
+                TileData[] sprites = tiles.Where(t => 
+                            (t.type == TileID.Explosives ||
+                            t.type == TileID.PressurePlates || 
+                            t.wall == WallID.RubyGemspark ||
+                            t.wall == WallID.SapphireGemspark) &&
+                            t.active == true).ToArray();	
+                for (int m = 0; m < sprites.Length; m++)
+                {
+                    Utils.ReplaceTiles(sprites[m].i, sprites[m].j, sprites[m]);
+                    index++;
+                }
                 for (int n = 0; n < modifiedTile.Count; n++)	
                 {	
                     TileData[] list = tiles.Where(t => 	
@@ -198,24 +209,7 @@ namespace ArcticCircle
                     
                     if (data.active)	
                     {
-                        WorldGen.PlaceTile(i, j, data.type, true, true);
-                        if (data.wall != 0)
-                            WorldGen.PlaceWall(i, j, data.wall, true);
-                            
-                        ITile tile = Main.tile[i, j];
-                        tile.type = data.type;
-                        if (data.halfBrick)
-                        {
-                            tile.halfBrick(data.halfBrick);
-                        }
-                        else tile.slope(data.slope);
-                        //  TODO: sort out slopes after replacing the tiles. This is returning a System.IndexOutOfRangeException.
-                        int x = Netplay.GetSectionX(i);
-                        int y = Netplay.GetSectionY(j);
-                        foreach (RemoteClient sock in Netplay.Clients.Where(t => t.IsActive))
-                        {
-                            sock.TileSections[x, y] = false;
-                        }
+                        Utils.ReplaceTiles(i, j, data);
                         index++;
                     }	
                     else	
